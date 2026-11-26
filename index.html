@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Track Income</title>
+<title>Income Tracker</title>
 <style>
 :root{--bg:#eaf5f4;--card:rgba(255,255,255,.80);--ink:#0c2a2c;--mute:#5b7478;--line:rgba(12,42,44,.10);--accent:#0b8f86;--accent2:#19c3ae;--bad:#d0432f;--chip:rgba(11,143,134,.09)}
 @media (prefers-color-scheme:dark){:root{--bg:#0a1718;--card:rgba(16,34,36,.74);--ink:#e8f4f2;--mute:#a9c6c6;--line:rgba(232,244,242,.10);--accent:#2dd4bf;--accent2:#14a394;--bad:#ff8a73;--chip:rgba(45,212,191,.12);color-scheme:dark}}
@@ -115,7 +115,7 @@ select:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px rgba(25,1
 @media (prefers-color-scheme:dark){select{background:rgba(255,255,255,.06)}}
 .f{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .f .w{grid-column:1/-1}
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.seg{display:grid;grid-template-columns:1fr 1.7fr 1fr;gap:6px;margin-top:10px}.seg button{padding:8px 4px;font-size:14px}
 .seg button{background:var(--chip);color:var(--ink);box-shadow:none;border:1px solid var(--line)}
 .seg button.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
 .fl{display:flex;gap:8px;margin-bottom:8px}
@@ -164,6 +164,7 @@ input[type=checkbox]{width:20px;height:20px;min-height:0;padding:0}
 @media (prefers-color-scheme:dark){button{color:#04302d}button.ghost{color:var(--mute)}button.paid{color:var(--accent)}.seg button{color:var(--ink)}.seg button.on{color:#04302d}}
 
 
+.cur{display:flex;gap:8px}.cur select{flex:0 0 42%;font-size:15px}#econv{margin:-2px 0 2px}
 /* splash + motion */
 #splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:radial-gradient(circle at 50% 38%,#12b5a8 0,#0b8f86 38%,#064a49 100%);transition:opacity .6s ease,visibility .6s}
 #splash.out{opacity:0;visibility:hidden}
@@ -189,10 +190,10 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 </style>
 </head>
 <body>
-<div id="splash"><div class="lg"><img src="icon-512.png" alt=""></div><div class="tt">Track Income</div><div class="sb">Hussain Siraj</div><div class="bar"><i></i></div></div>
+<div id="splash"><div class="lg"><img src="icon-512.png" alt=""></div><div class="tt">Income Tracker</div><div class="sb">Hussain Siraj</div><div class="bar"><i></i></div></div>
 <script>(function(){var t=Date.now();window.hideSplash=function(){var s=document.getElementById("splash");if(!s)return;var w=Math.max(0,1900-(Date.now()-t));setTimeout(function(){s.classList.add("out");setTimeout(function(){s.remove()},700)},w)};setTimeout(window.hideSplash,3500)})();</script>
 <div id="lock" hidden>
-  <h1>Track Income</h1>
+  <h1>Income Tracker</h1>
   <p class="mute">Enter your PIN</p>
   <input id="lpin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" aria-label="PIN">
   <button id="lgo">Unlock</button>
@@ -215,7 +216,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 
 <!-- App -->
 <div id="appwrap" hidden>
-<div class="top"><h1>Siraj Account Balance</h1><span><button class="ghost" id="rf" title="Refresh from sheet">↻</button> <a id="sheet" target="_blank" rel="noopener" href="#">Open sheet ↗</a></span></div>
+<div class="top"><h1>Siraj Account Balance</h1><span><button class="ghost" id="rf" title="Refresh from sheet">↻</button> <a id="sheet" target="_blank" rel="noopener" href="#">Open sheet ↗</a> <button class="ghost" id="lo" title="Log out">Log out</button></span></div>
 <div id="st">Loading…</div>
 
 <div id="cards" class="loading">
@@ -240,11 +241,11 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 
 <div class="card" id="c4">
   <h2>Add</h2>
-  <div class="seg"><button id="tE" class="on">Expense</button><button id="tI">Income</button></div>
+  <div class="seg"><button id="tE" class="on">Expense</button><button id="tF">Expense-Foreign</button><button id="tI">Income</button></div>
   <div class="f" id="fe">
     <input id="en" class="w" placeholder="Name" list="names" autocomplete="off">
     <select id="ec" aria-label="Category"></select>
-    <input id="ea" type="number" step="0.01" inputmode="decimal" placeholder="Amount">
+    <input id="ea" type="number" step="0.01" inputmode="decimal" placeholder="Amount (MVR)">
     <input id="et" class="w" placeholder="Note (optional)">
     <button id="eadd" class="w">Add expense</button>
   </div>
@@ -252,6 +253,16 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
     <input id="in" class="w" placeholder="Name (e.g. Salary)" autocomplete="off">
     <input id="ia" class="w" type="number" step="0.01" inputmode="decimal" placeholder="Amount">
     <button id="iadd" class="w">Add income</button>
+  </div>
+  <div class="f" id="ff" style="display:none">
+    <input id="fn" class="w" placeholder="Name" list="names" autocomplete="off">
+    <select id="fc" aria-label="Category"></select>
+    <div class="w cur"><select id="fcur" aria-label="Currency"><option value="USD">USD</option><option value="LKR">LKR (Sri Lanka)</option></select><input id="fa" type="number" step="0.01" inputmode="decimal" placeholder="Amount"></div>
+    <label class="w" for="fr">Rate: 1 <span id="fcn">USD</span> = ? MVR (you can change it for this entry)</label>
+    <input id="fr" class="w" type="number" step="0.0001" inputmode="decimal">
+    <div class="w mute sm" id="fconv">Enter an amount to see the MVR value.</div>
+    <input id="ft" class="w" placeholder="Note (optional)">
+    <button id="fadd" class="w">Add Expense-Foreign</button>
   </div>
   <datalist id="names"></datalist>
 </div>
@@ -279,6 +290,13 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   <p class="mute">Tap “Paid” to move an item into Expenses. 🔁 items come back every month.</p>
 </div>
 
+<div class="card" id="c6">
+  <h2 class="tg" data-k="c6"><span><i>▾</i>Expense-Foreign</span><span class="sum" id="s6"></span></h2>
+  <div id="ftot" class="mute sm"></div>
+  <div id="flist"></div>
+  <p class="mute sm">Counted in MVR in your totals. The foreign amount, currency, rate and MVR amount are all saved in the sheet.</p>
+</div>
+
 <div class="card" id="c5">
   <h2 class="tg" data-k="c5"><span><i>▾</i>Spending by category</span><span class="sum" id="s5"></span></h2>
   <div id="chart"></div>
@@ -291,6 +309,8 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
     <div><label for="bank">Bank amount (income received)</label><input id="bank" type="number" step="0.01" inputmode="decimal"></div>
     <div><label for="inc">Expected income (added to R. Balance)</label><input id="inc" type="number" step="0.01" inputmode="decimal"></div>
     <div><label for="bud2">Monthly budget (0 = off)</label><input id="bud2" type="number" step="0.01" inputmode="decimal"></div>
+    <div><label for="rlkr">1 LKR = ? MVR (Sri Lanka rupee rate)</label><input id="rlkr" type="number" step="0.0001" inputmode="decimal"></div>
+    <div><label for="rusd">1 USD = ? MVR (dollar rate)</label><input id="rusd" type="number" step="0.0001" inputmode="decimal"></div>
     <div><label for="eday">Month ends on day (1–28; 31 = calendar month)</label><input id="eday" type="number" min="1" max="31" step="1" inputmode="numeric"></div>
   </div>
   <p class="mute sm" id="sdn"></p>
@@ -301,7 +321,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   </div>
 </div>
 </div>
-<div id="foot"><a href="#" id="dis">Change connection</a></div>
+<div id="foot"><a href="#" id="dis">Change connection</a> · <a href="#" id="lo2">Log out</a></div>
 </div>
 </main>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -309,8 +329,8 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <script>
 const CATS=["Bills","Food","Shop","Hotel","Transport","Health","Other"];
 const COLORS=["#0b8f86","#e0a526","#6a7be0","#e0645a","#58b368","#a35fc7","#7a8b99"];
-const KEYS=["c1","c2","c3","c5"];
-function blank(){return {bank:0,income:0,budget:0,end:24,exp:[],inc:[],up:[],closed:{}}}
+const KEYS=["c1","c2","c3","c6","c5"];
+function blank(){return {bank:0,income:0,budget:0,end:24,rlkr:0.05,rusd:15.42,exp:[],inc:[],up:[],closed:{}}}
 let CFG=null,S=blank(),PEND=[],PENDI=[],ready=false,saving=false,unsaved=false,timer=null,lastLoad=0,curMon=null,q="",tab="e",hiddenAt=0,tt=null;
 const $=id=>document.getElementById(id);
 const num=v=>{const x=parseFloat(v);return isFinite(x)?x:0};
@@ -400,7 +420,7 @@ async function apiGet(){
   return j.data;
 }
 async function apiSave(add,addInc){
-  const data={bank:S.bank,income:S.income,budget:S.budget,end:eday(),up:S.up,add,addInc};
+  const data={bank:S.bank,income:S.income,budget:S.budget,end:eday(),rlkr:S.rlkr,rusd:S.rusd,up:S.up,add,addInc};
   const r=await fetch(CFG.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({key:CFG.key,data})});
   const j=await r.json();
   if(!j.ok)throw new Error(j.error||"error");
@@ -430,7 +450,7 @@ async function load(){
     if(unsaved||PEND.length||PENDI.length){await push();if(unsaved||PEND.length||PENDI.length)throw new Error("not synced")}
     const d=await apiGet();
     const prev=ready?Object.assign({},S.closed):null;   // keep sections open only while you are looking at them
-    S=Object.assign(blank(),d);S.inc=d.inc||[];S.up=d.up||[];S.end=d.end||24;setClosed(prev);
+    S=Object.assign(blank(),d);S.inc=d.inc||[];S.up=d.up||[];S.end=d.end||24;S.rlkr=d.rlkr||0.05;S.rusd=d.rusd||15.42;setClosed(prev);
     ready=true;lastLoad=Date.now();lsSet("cache",S);
     $("sheet").href=d.url;$("sheet2").href=d.url;$("cards").classList.remove("loading");
     render();totals();status("Loaded from Google Sheet ✓");
@@ -476,7 +496,7 @@ function renderHist(){
     const r=it.r,d=mk("div",{className:"h"}),l=mk("div",{className:"hn"}),meta=mk("small");
     l.append(mk("span",{textContent:r.n||"(no name)"}));
     meta.append(mk("em",{className:"chip"+(it.t==="i"?" in":""),textContent:it.t==="i"?"Income":catOf(r)}));
-    meta.append(document.createTextNode([r.t,dlabel(r.d)].filter(Boolean).join(" · ")));
+    meta.append(document.createTextNode([r.t,(r.cur?fmt(num(r.o))+" "+r.cur+" @ "+r.r:""),dlabel(r.d)].filter(Boolean).join(" · ")));
     l.append(meta);
     d.append(l,mk("div",{className:"ha"+(it.t==="i"?" in":""),textContent:(it.t==="i"?"+":"−")+fmt(num(r.a))}));
     box.append(d);
@@ -517,10 +537,10 @@ function renderUp(){
   });
 }
 function render(){
-  renderUp();renderHist();renderChart();
+  renderUp();renderHist();renderForeign();renderChart();
   const dl=$("names");dl.textContent="";const seen=new Set();
   for(let i=S.exp.length-1;i>=0&&seen.size<60;i--){const n=(S.exp[i].n||"").trim(),k=n.toLowerCase();if(n&&!seen.has(k)){seen.add(k);dl.append(new Option(n))}}
-  $("bank").value=S.bank;$("inc").value=S.income;$("bud2").value=S.budget||"";$("eday").value=eday();
+  $("bank").value=S.bank;$("inc").value=S.income;$("bud2").value=S.budget||"";$("eday").value=eday();$("rlkr").value=S.rlkr;$("rusd").value=S.rusd;
   $("sdn").textContent="Current month: "+mlabel(tmk())+(eday()>=29?"":". It starts the day after the previous month ended.");
   applyClosed();
 }
@@ -532,16 +552,25 @@ $("bank").oninput=e=>{S.bank=e.target.value;totals();persist()};
 $("inc").oninput=e=>{S.income=e.target.value;totals();persist()};
 $("bud2").oninput=e=>{S.budget=e.target.value;totals();persist()};
 $("eday").oninput=e=>{const v=parseInt(e.target.value,10);if(v>=1&&v<=31){S.end=v;curMon=null;render();totals();persist()}};
+$("rlkr").oninput=e=>{const v=num(e.target.value);if(v>0){S.rlkr=v;useRate();persist()}};
+$("rusd").oninput=e=>{const v=num(e.target.value);if(v>0){S.rusd=v;useRate();persist()}};
 $("eday").onchange=e=>{e.target.value=eday()};
 
 /* ---------- adding ---------- */
-CATS.forEach(c=>$("ec").append(new Option(c,c)));
-function setTab(t){tab=t;$("fe").style.display=t==="e"?"":"none";$("fi").style.display=t==="i"?"":"none";$("tE").classList.toggle("on",t==="e");$("tI").classList.toggle("on",t==="i")}
-$("tE").onclick=()=>setTab("e");$("tI").onclick=()=>setTab("i");
+CATS.forEach(c=>{$("ec").append(new Option(c,c));$("fc").append(new Option(c,c))});
+function setTab(t){tab=t;$("fe").style.display=t==="e"?"":"none";$("fi").style.display=t==="i"?"":"none";$("ff").style.display=t==="f"?"":"none";$("tE").classList.toggle("on",t==="e");$("tI").classList.toggle("on",t==="i");$("tF").classList.toggle("on",t==="f");if(t==="f")useRate()}
+$("tE").onclick=()=>setTab("e");$("tI").onclick=()=>setTab("i");$("tF").onclick=()=>setTab("f");
 $("en").addEventListener("input",()=>{
   const v=$("en").value.trim().toLowerCase();if(!v)return;
   for(let i=S.exp.length-1;i>=0;i--){if((S.exp[i].n||"").toLowerCase()===v){$("ec").value=CATS.includes(catOf(S.exp[i]))?catOf(S.exp[i]):"Other";break}}
 });
+function rateOf(c){return c==="LKR"?(num(S.rlkr)||0.05):c==="USD"?(num(S.rusd)||15.42):1}
+function useRate(){const c=$("fcur").value;$("fcn").textContent=c;$("fr").value=rateOf(c);convHint()}
+function convHint(){
+  const c=$("fcur").value,v=num($("fa").value),r=num($("fr").value);
+  $("fconv").textContent=(v>0&&r>0)?"= MVR "+fmt(Math.round(v*r*100)/100)+"  ("+fmt(v)+" "+c+" × "+r+")":"Enter an amount to see the MVR value.";
+}
+$("fcur").onchange=useRate;$("fa").addEventListener("input",convHint);$("fr").addEventListener("input",convHint);
 $("eadd").onclick=()=>{
   const a=$("ea").value,n=$("en").value.trim();
   if(!(num(a)>0)){toast("Enter an amount");return}
@@ -549,6 +578,30 @@ $("eadd").onclick=()=>{
   S.exp.push(it);PEND.push(it);["en","et","ea"].forEach(k=>$(k).value="");$("ec").value="Bills";
   render();totals();persist();$("en").focus();toast("Expense added");
 };
+$("fadd").onclick=()=>{
+  const raw=num($("fa").value),rate=num($("fr").value),cur=$("fcur").value;
+  if(!(raw>0)){toast("Enter an amount");return}
+  if(!(rate>0)){toast("Enter the rate");return}
+  const it={n:$("fn").value.trim(),t:$("ft").value.trim(),a:Math.round(raw*rate*100)/100,c:$("fc").value,d:todayISO(),id:uid(),o:raw,cur,r:rate};
+  S.exp.push(it);PEND.push(it);["fn","ft","fa"].forEach(k=>$(k).value="");$("fc").value="Bills";useRate();
+  render();totals();persist();$("fn").focus();toast("Expense-Foreign added");
+};
+function renderForeign(){
+  const all=S.exp.filter(x=>x.cur).sort((p,q)=>String(q.d||"").localeCompare(String(p.d||""))),tm=tmk(),T={};
+  all.forEach(x=>{if(x.d&&pkey(x.d)===tm){const t=T[x.cur]||(T[x.cur]={o:0,a:0});t.o+=num(x.o);t.a+=num(x.a)}});
+  const parts=Object.keys(T).map(c=>fmt(T[c].o)+" "+c+" → MVR "+fmt(T[c].a));
+  $("ftot").textContent=parts.length?"This month: "+parts.join("  ·  "):"No Expense-Foreign entries this month.";
+  const sum=Object.keys(T).reduce((p,c)=>p+T[c].a,0);$("s6").textContent=fmt(sum);
+  const box=$("flist");box.textContent="";
+  if(!all.length)box.append(mk("p",{className:"mute",textContent:"None yet. Use the Expense-Foreign tab above to add one."}));
+  all.slice(0,40).forEach(r=>{
+    const d=mk("div",{className:"h"}),l=mk("div",{className:"hn"}),meta=mk("small");
+    l.append(mk("span",{textContent:r.n||"(no name)"}));
+    meta.append(mk("em",{className:"chip",textContent:catOf(r)}));
+    meta.append(document.createTextNode([fmt(num(r.o))+" "+r.cur+" @ "+r.r,r.t,dlabel(r.d)].filter(Boolean).join(" · ")));
+    l.append(meta);d.append(l,mk("div",{className:"ha",textContent:"−"+fmt(num(r.a))}));box.append(d);
+  });
+}
 $("iadd").onclick=()=>{
   const a=$("ia").value,n=$("in").value.trim();
   if(!(num(a)>0)){toast("Enter an amount");return}
@@ -614,6 +667,18 @@ $("cgo").onclick=async()=>{
   catch(e){$("cerr").textContent=String(e.message)==="unauthorized"?"Wrong key. Check the API_KEY in Code.gs.":"Could not connect. Check the URL, and that access is set to Anyone."}
 };
 $("dis").onclick=e=>{e.preventDefault();try{localStorage.removeItem("cfg");localStorage.removeItem("cache")}catch(x){}CFG=null;ready=false;showSetup("")};
+
+
+function logout(e){
+  if(e&&e.preventDefault)e.preventDefault();
+  const un=(PEND||[]).length+(PENDI||[]).length;
+  const msg=un?("You have "+un+" entry(s) not saved to the sheet yet. Logging out will lose them. Log out anyway?"):"Log out of Income Tracker on this phone? Your data stays safe in your Google Sheet.";
+  if(!confirm(msg))return;
+  ["cfg","cache","pend","pendi","pin"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
+  PEND=[];PENDI=[];CFG=null;ready=false;S=blank();
+  $("lock").hidden=true;$("appwrap").hidden=true;showSetup("You are logged out. Enter your URL and key to log in again.");
+}
+$("lo").onclick=logout;$("lo2").onclick=logout;
 
 function start(){
   $("setup").hidden=true;$("appwrap").hidden=false;

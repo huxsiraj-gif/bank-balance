@@ -1,7 +1,7 @@
 {
-  "name": "Track Income",
-  "short_name": "Track Income",
-  "description": "Track expenses and bank balance, saved to your Google Sheet",
+  "name": "Income Tracker",
+  "short_name": "Income Tracker",
+  "description": "Track income and expenses, saved to your Google Sheet",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
