@@ -427,7 +427,7 @@ async function call(url,opt){
 async function apiGet(){
   const j=await call(CFG.url+"?action=get&key="+encodeURIComponent(CFG.key));
   if(!j.ok)throw new Error(j.error||"error");
-  return j.data;
+  j.data._ms=j.ms;return j.data;
 }
 async function apiSave(add,addInc){
   const data={bank:S.bank,income:S.income,budget:S.budget,end:eday(),rlkr:S.rlkr,rusd:S.rusd,up:S.up,add,addInc};
@@ -452,7 +452,10 @@ async function push(){
   }catch(e){saving=false;unsaved=true;status("Not saved: "+String(e.message||e).slice(0,140)+" – tap here to retry",true)}
 }
 function setClosed(prev){S.closed={};KEYS.forEach(k=>{S.closed[k]=!(prev&&prev[k]===false)})}
-async function load(){
+let loadingNow=false;
+async function load(){if(loadingNow)return;loadingNow=true;try{await loadInner()}finally{loadingNow=false}}
+async function loadInner(){
+  const t0=Date.now();
   status("Loading…");
   try{
     if(timer){clearTimeout(timer);timer=null}
@@ -462,7 +465,7 @@ async function load(){
     S=Object.assign(blank(),d);S.inc=d.inc||[];S.up=d.up||[];S.end=d.end||24;S.rlkr=d.rlkr||0.05;S.rusd=d.rusd||15.42;setClosed(prev);
     ready=true;lastLoad=Date.now();lsSet("cache",S);
     $("sheet").href=d.url;$("sheet2").href=d.url;$("cards").classList.remove("loading");
-    render();totals();status("Loaded from Google Sheet ✓");
+    render();totals();status("Loaded from Google Sheet ✓ ("+((Date.now()-t0)/1000).toFixed(1)+"s"+(d._ms!=null?", script "+(d._ms/1000).toFixed(1)+"s, open sheet "+((d.openMs||0)/1000).toFixed(1)+"s":"")+")");
   }catch(e){
     if(String(e.message)==="unauthorized"){showSetup("Wrong key. Check the API_KEY in Code.gs.");return}
     if(!ready){const c=lsGet("cache");if(c){S=Object.assign(blank(),c);setClosed(null);render();totals()}}
