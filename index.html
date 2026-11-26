@@ -413,16 +413,25 @@ function sortedItems(exp,inc){
 /*ENDPURE*/
 
 /* ---------- talking to the Google Sheet via Apps Script ---------- */
+async function call(url,opt){
+  const ac=new AbortController(),t=setTimeout(()=>ac.abort(),45000);
+  try{
+    const r=await fetch(url,Object.assign({signal:ac.signal},opt||{}));
+    const txt=await r.text();
+    try{return JSON.parse(txt)}catch(e){throw new Error("The script returned a web page, not data. In Apps Script: Deploy > Manage deployments > set 'Who has access' to Anyone, then New version.")}
+  }catch(e){
+    if(e.name==="AbortError")throw new Error("The Google script took too long (45s). Tap to retry.");
+    throw e;
+  }finally{clearTimeout(t)}
+}
 async function apiGet(){
-  const r=await fetch(CFG.url+"?action=get&key="+encodeURIComponent(CFG.key));
-  const j=await r.json();
+  const j=await call(CFG.url+"?action=get&key="+encodeURIComponent(CFG.key));
   if(!j.ok)throw new Error(j.error||"error");
   return j.data;
 }
 async function apiSave(add,addInc){
   const data={bank:S.bank,income:S.income,budget:S.budget,end:eday(),rlkr:S.rlkr,rusd:S.rusd,up:S.up,add,addInc};
-  const r=await fetch(CFG.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({key:CFG.key,data})});
-  const j=await r.json();
+  const j=await call(CFG.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({key:CFG.key,data})});
   if(!j.ok)throw new Error(j.error||"error");
 }
 function persist(){
@@ -440,7 +449,7 @@ async function push(){
     saving=false;
     if(unsaved)return push();
     status("Saved to Google Sheet ✓");
-  }catch(e){saving=false;unsaved=true;status("Not saved – tap here to retry",true)}
+  }catch(e){saving=false;unsaved=true;status("Not saved: "+String(e.message||e).slice(0,140)+" – tap here to retry",true)}
 }
 function setClosed(prev){S.closed={};KEYS.forEach(k=>{S.closed[k]=!(prev&&prev[k]===false)})}
 async function load(){
@@ -457,7 +466,8 @@ async function load(){
   }catch(e){
     if(String(e.message)==="unauthorized"){showSetup("Wrong key. Check the API_KEY in Code.gs.");return}
     if(!ready){const c=lsGet("cache");if(c){S=Object.assign(blank(),c);setClosed(null);render();totals()}}
-    status(ready?"Not synced – tap here to retry":"Offline – showing last saved copy. Tap here to retry",true);
+    const m=String(e.message||e);
+    status((ready?"Not synced: ":"Offline, showing last saved copy: ")+(/Failed to fetch|NetworkError|Load failed/i.test(m)?"no connection or wrong URL":m)+" – tap here to retry",true);
   }
 }
 $("st").onclick=()=>{if($("st").className==="bad")load()};
