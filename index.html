@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f6e56">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Bank Balance</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#1c1c1a;--mute:#74726b;--line:#e6e3da;--accent:#0f6e56;--bad:#b3341f;--chip:#eef4f1}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--card:#1e1e1c;--ink:#efede6;--mute:#9a978d;--line:#33322e;--accent:#4cc3a0;--bad:#f08a76;--chip:#22302b;color-scheme:dark}}
+html{-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+main{max-width:720px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(32px + env(safe-area-inset-bottom,0px))}
+#cards.loading{opacity:.5;pointer-events:none}
+h1{font-size:18px;margin:8px 0}
+h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:0}
+a{color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{background:var(--chip);border-radius:10px;padding:10px 12px}
+.stat small{display:block;color:var(--mute);font-size:12px}
+.stat b{font-size:18px;font-variant-numeric:tabular-nums}
+.stat.big{grid-column:1/-1}.stat.big b{font-size:26px;color:var(--accent)}
+.neg b{color:var(--bad)!important}
+label{font-size:12px;color:var(--mute);display:block;margin:8px 0 3px}
+input{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;width:100%;min-width:0;min-height:44px}
+input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+button{font:inherit;border:0;border-radius:8px;padding:8px 12px;min-height:44px;background:var(--accent);color:#fff;cursor:pointer}
+button.ghost{background:transparent;color:var(--mute);padding:8px}
+button.paid{background:var(--chip);color:var(--accent);font-size:13px}
+.row{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+.row.up{grid-template-columns:1fr auto auto}
+.row>:first-child{grid-column:1/-1}
+.add{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.add.up{grid-template-columns:1fr}
+.add>:first-child,.add>button{grid-column:1/-1}
+.tot{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:8px;padding-top:8px;font-weight:600;font-variant-numeric:tabular-nums}
+.mute{color:var(--mute);font-size:13px}
+.top{display:flex;justify-content:space-between;align-items:center}
+#st{font-size:12px;color:var(--mute);margin-bottom:8px;min-height:18px}
+#st.bad{color:var(--bad);font-weight:600;cursor:pointer}
+.tg{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;padding:6px 0;min-height:44px}
+.card:not(.closed)>.tg{margin-bottom:8px}
+.tg .sum{display:none;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none;font-size:15px;font-weight:600}
+.tg i{display:inline-block;font-style:normal;transition:transform .15s;margin-right:6px}
+.card.closed>:not(h2){display:none}
+#c1.closed>.add{display:grid}
+.card.closed .tg .sum{display:inline}
+.card.closed .tg i{transform:rotate(-90deg)}
+#bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:10px;font-variant-numeric:tabular-nums;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+#bar small{display:block;color:var(--mute);font-size:11px}
+#bar b{font-size:17px}
+#bar div:last-child{text-align:right}
+#foot{text-align:center;margin-top:6px}
+#foot a{color:var(--mute);font-size:12px}
+@media(min-width:561px){#bar{display:none}.row{grid-template-columns:1fr 84px 92px auto;border:0;padding:0;margin-bottom:6px}.row.up{grid-template-columns:1fr 92px auto auto}.row>:first-child{grid-column:auto}.add{grid-template-columns:1fr 84px 92px auto}.add.up{grid-template-columns:1fr 92px auto}.add>:first-child,.add>button{grid-column:auto}}
+@media(max-width:560px){#c3 .grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+
+<!-- First-run connection screen -->
+<div id="setup" hidden>
+  <h1>Connect to your Google Sheet</h1>
+  <div class="card">
+    <label for="cu">Web app URL (ends with /exec)</label>
+    <input id="cu" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+    <label for="ck">Secret key</label>
+    <input id="ck" type="password" placeholder="The API_KEY you set in Code.gs" autocomplete="off">
+    <p id="cerr" class="mute"></p>
+    <button id="cgo" style="width:100%">Connect</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="appwrap" hidden>
+<div class="top"><h1>Bank Balance</h1><a id="sheet" target="_blank" rel="noopener" href="#">Open sheet ↗</a></div>
+<div id="st">Loading…</div>
+
+<div id="cards" class="loading">
+<div id="bar"><div><small>Balance</small><b id="bb">0.00</b></div><div><small>R. Balance</small><b id="br">0.00</b></div></div>
+
+<div class="card">
+  <div class="grid">
+    <div class="stat big" id="balBox"><small>Balance (Bank − Spent)</small><b id="bal">0.00</b></div>
+    <div class="stat"><small>Spent</small><b id="spent">0.00</b></div>
+    <div class="stat" id="abBox"><small>A. Balance (after upcoming)</small><b id="ab">0.00</b></div>
+    <div class="stat" id="rbBox"><small>R. Balance (+ expected income)</small><b id="rb">0.00</b></div>
+    <div class="stat"><small>Upcoming total</small><b id="upt">0.00</b></div>
+  </div>
+</div>
+
+<div class="card" id="c3">
+  <h2 class="tg" data-k="c3"><span><i>▾</i>Opening balance &amp; income</span><span class="sum" id="s3"></span></h2>
+  <div class="grid">
+    <div><label for="bank">Bank (opening balance)</label><input id="bank" type="number" step="0.01" inputmode="decimal"></div>
+    <div><label for="inc">Expected income (added to R. Balance)</label><input id="inc" type="number" step="0.01" inputmode="decimal"></div>
+  </div>
+</div>
+
+<div class="card" id="c2">
+  <h2 class="tg" data-k="c2"><span><i>▾</i>Expenses ahead</span><span class="sum" id="s2"></span></h2>
+  <div id="up"></div>
+  <div class="add up">
+    <input id="un" placeholder="Name">
+    <input id="ua" type="number" step="0.01" inputmode="decimal" placeholder="Amount">
+    <button id="uadd">Add</button>
+  </div>
+  <div class="tot"><span>Total ahead</span><span id="upt2">0.00</span></div>
+  <p class="mute">Tap “Paid” to move an upcoming item into Expenses.</p>
+</div>
+
+<div class="card" id="c1">
+  <h2 class="tg" data-k="c1"><span><i>▾</i>Expenses</span><span class="sum" id="s1"></span></h2>
+  <div id="exp"></div>
+  <div class="add">
+    <input id="en" placeholder="Name">
+    <input id="et" placeholder="Note">
+    <input id="ea" type="number" step="0.01" inputmode="decimal" placeholder="Amount">
+    <button id="eadd">Add</button>
+  </div>
+  <div class="tot"><span>Total spent</span><span id="spent2">0.00</span></div>
+</div>
+</div>
+<div id="foot"><a href="#" id="dis">Change connection</a></div>
+</div>
+</main>
+
+<script>
+let CFG=null,S={bank:0,income:0,exp:[],up:[],closed:{}},ready=false,saving=false,dirty=false,timer=null;
+const $=id=>document.getElementById(id);
+const num=v=>{const x=parseFloat(v);return isFinite(x)?x:0};
+const fmt=x=>x.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const sum=a=>a.reduce((s,r)=>s+num(r.a),0);
+function status(t,bad){const e=$("st");e.textContent=t;e.className=bad?"bad":""}
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+
+/* ---------- talking to the Google Sheet via Apps Script ---------- */
+async function apiGet(){
+  const r=await fetch(CFG.url+"?action=get&key="+encodeURIComponent(CFG.key));
+  const j=await r.json();
+  if(!j.ok)throw new Error(j.error||"error");
+  return j.data;
+}
+async function apiSave(){
+  const r=await fetch(CFG.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({key:CFG.key,data:S})});
+  const j=await r.json();
+  if(!j.ok)throw new Error(j.error||"error");
+}
+function persist(){if(!ready)return;lsSet("cache",S);status("Saving…");clearTimeout(timer);timer=setTimeout(push,700)}
+async function push(){
+  if(saving){dirty=true;return}
+  saving=true;dirty=false;
+  try{await apiSave();saving=false;if(dirty)push();else status("Saved to Google Sheet ✓")}
+  catch(e){saving=false;status("Not saved – tap here to retry",true)}
+}
+async function load(){
+  status("Loading…");
+  try{
+    const d=await apiGet();
+    S=d;S.closed=S.closed||{};ready=true;lsSet("cache",S);
+    $("sheet").href=d.url;$("cards").classList.remove("loading");
+    render();totals();status("Loaded from Google Sheet ✓");
+  }catch(e){
+    if(String(e.message)==="unauthorized"){showSetup("Wrong key. Check the API_KEY in Code.gs.");return}
+    const c=lsGet("cache");
+    if(c){S=c;S.closed=S.closed||{};render();totals()}
+    status("Offline – showing last saved copy. Tap here to retry",true);
+  }
+}
+$("st").onclick=()=>{if($("st").className!=="bad")return;if(ready)push();else load()};
+
+/* ---------- calculations ---------- */
+function totals(){
+  const spent=sum(S.exp),up=sum(S.up),bal=num(S.bank)-spent,ab=bal-up,rb=ab+num(S.income);
+  const set=(id,v,box)=>{$(id).textContent=fmt(v);if(box)$(box).classList.toggle("neg",v<0)};
+  set("spent",spent);set("spent2",spent);set("bal",bal,"balBox");set("ab",ab,"abBox");set("rb",rb,"rbBox");set("upt",up);set("upt2",up);
+  set("s1",spent);set("s2",up);set("s3",num(S.bank));set("bb",bal);set("br",rb);
+}
+
+/* ---------- rendering ---------- */
+function mk(tag,props){const e=document.createElement(tag);Object.assign(e,props||{});return e}
+function inp(val,type,ph,on){const i=mk("input",{value:val,placeholder:ph||""});if(type)i.type=type;if(type==="number"){i.step="0.01";i.inputMode="decimal"}i.addEventListener("input",()=>{on(i.value);totals();persist()});return i}
+function render(){
+  const e=$("exp");e.textContent="";
+  S.exp.forEach((r,i)=>{
+    const d=mk("div",{className:"row"});
+    d.append(inp(r.n,"","Name",v=>r.n=v),inp(r.t,"","Note",v=>r.t=v),inp(r.a,"number","0.00",v=>r.a=v));
+    const x=mk("button",{className:"ghost",textContent:"✕",title:"Delete"});x.onclick=()=>{S.exp.splice(i,1);render();totals();persist()};
+    d.append(x);e.append(d)});
+  const u=$("up");u.textContent="";
+  S.up.forEach((r,i)=>{
+    const d=mk("div",{className:"row up"});
+    d.append(inp(r.n,"","Name",v=>r.n=v),inp(r.a,"number","0.00",v=>r.a=v));
+    const p=mk("button",{className:"paid",textContent:"Paid"});p.onclick=()=>{S.exp.push({n:r.n,t:"",a:r.a});S.up.splice(i,1);render();totals();persist()};
+    const x=mk("button",{className:"ghost",textContent:"✕",title:"Delete"});x.onclick=()=>{S.up.splice(i,1);render();totals();persist()};
+    d.append(p,x);u.append(d)});
+  $("bank").value=S.bank;$("inc").value=S.income;applyClosed();
+}
+function applyClosed(){const c=S.closed||{};["c1","c2","c3"].forEach(k=>$(k).classList.toggle("closed",!!c[k]))}
+document.querySelectorAll(".tg").forEach(h=>h.addEventListener("click",()=>{S.closed=S.closed||{};const k=h.dataset.k;S.closed[k]=!S.closed[k];applyClosed();persist()}));
+$("bank").oninput=e=>{S.bank=e.target.value;totals();persist()};
+$("inc").oninput=e=>{S.income=e.target.value;totals();persist()};
+$("eadd").onclick=()=>{const a=$("ea").value;if(!$("en").value.trim()&&!a)return;S.exp.push({n:$("en").value.trim(),t:$("et").value.trim(),a:a});["en","et","ea"].forEach(k=>$(k).value="");render();totals();persist();$("en").focus()};
+$("uadd").onclick=()=>{const a=$("ua").value;if(!$("un").value.trim()&&!a)return;S.up.push({n:$("un").value.trim(),a:a});["un","ua"].forEach(k=>$(k).value="");render();totals();persist()};
+["en","et","ea"].forEach(k=>$(k).addEventListener("keydown",e=>{if(e.key==="Enter")$("eadd").click()}));
+["un","ua"].forEach(k=>$(k).addEventListener("keydown",e=>{if(e.key==="Enter")$("uadd").click()}));
+
+/* ---------- connection screen ---------- */
+function showSetup(msg){
+  $("appwrap").hidden=true;$("setup").hidden=false;
+  $("cerr").textContent=msg||"";
+  if(CFG){$("cu").value=CFG.url||"";}
+}
+$("cgo").onclick=async()=>{
+  const url=$("cu").value.trim(),key=$("ck").value.trim();
+  if(!/^https:\/\/script\.google\.com\/.+\/exec/.test(url)){$("cerr").textContent="The URL must start with https://script.google.com and end with /exec";return}
+  if(!key){$("cerr").textContent="Enter your secret key.";return}
+  CFG={url,key};$("cerr").textContent="Connecting…";
+  try{await apiGet();lsSet("cfg",CFG);start()}
+  catch(e){$("cerr").textContent=String(e.message)==="unauthorized"?"Wrong key. Check the API_KEY in Code.gs.":"Could not connect. Check the URL, and that access is set to Anyone."}
+};
+$("dis").onclick=e=>{e.preventDefault();try{localStorage.removeItem("cfg");localStorage.removeItem("cache")}catch(x){}CFG=null;ready=false;showSetup("")};
+
+function start(){
+  $("setup").hidden=true;$("appwrap").hidden=false;
+  const c=lsGet("cache");if(c){S=c;S.closed=S.closed||{};render();totals()}
+  load();
+}
+CFG=lsGet("cfg");
+if(CFG&&CFG.url&&CFG.key)start();else showSetup("");
+
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
