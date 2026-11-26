@@ -50,6 +50,7 @@ button.paid{background:var(--chip);color:var(--accent);font-size:13px}
 .tg .sum{display:none;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none;font-size:15px;font-weight:600}
 .tg i{display:inline-block;font-style:normal;transition:transform .15s;margin-right:6px}
 .card.closed>:not(h2){display:none}
+.card.closed>#st{display:none}
 .card.closed .tg .sum{display:inline}
 #c3 .sum{display:none!important}
 .card.closed .tg i{transform:rotate(-90deg)}
@@ -66,9 +67,9 @@ button.paid{background:var(--chip);color:var(--accent);font-size:13px}
 body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(rgba(246,245,241,.45),rgba(246,245,241,.45)),url(bg.jpg) center/cover no-repeat}
 @media (prefers-color-scheme:dark){body::before{background:linear-gradient(rgba(10,20,18,.55),rgba(10,20,18,.55)),url(bg.jpg) center/cover no-repeat}}
 .top{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 12px;margin-bottom:10px}
-#st{display:inline-block;background:var(--card);border-radius:999px;padding:2px 10px;min-height:0}
+#st{display:inline-block;margin:6px 0 4px;background:var(--card);border-radius:999px;padding:2px 10px;min-height:0}
 #foot{text-align:center;margin-top:6px}
-#foot a{color:var(--mute);font-size:12px}
+#foot a,#foot span{color:var(--mute);font-size:12px}
 @media(min-width:561px){#bar{display:none}.row{grid-template-columns:1fr 84px 92px auto;border:0;padding:0;margin-bottom:6px}.row.up{grid-template-columns:1fr 92px auto auto}.row>:first-child{grid-column:auto}.add{grid-template-columns:1fr 84px 92px auto}.add.up{grid-template-columns:1fr 92px auto}.add>:first-child,.add>button{grid-column:auto}}
 @media(max-width:560px){#c3 .grid{grid-template-columns:1fr}}
 
@@ -165,7 +166,35 @@ input[type=checkbox]{width:20px;height:20px;min-height:0;padding:0}
 
 
 .cur{display:flex;gap:8px}.cur select{flex:0 0 42%;font-size:15px}#econv{margin:-2px 0 2px}
-#improw{margin-top:14px;display:flex;flex-direction:column;gap:8px}#improw input{width:100%}
+.stat[data-d]{position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s ease}
+.stat[data-d]:active{transform:scale(.97)}
+.stat[data-d] small{padding-right:16px}
+.stat[data-d]::after{content:"›";position:absolute;right:12px;top:8px;font-size:20px;line-height:1;opacity:.55}
+#dt{position:fixed;inset:0;z-index:30;background:rgba(0,20,20,.55);display:flex;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#dt[hidden]{display:none}
+.dtbox{width:100%;max-width:560px;max-height:82vh;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:22px 22px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));animation:dt-up .25s ease both}
+@keyframes dt-up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.dth{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;position:sticky;top:-16px;background:var(--bg);padding:2px 0 6px}
+.dth b{font-size:17px}
+.dr{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);font-variant-numeric:tabular-nums}
+.dr small{display:block;color:var(--mute);font-size:12px}
+.dr .v{white-space:nowrap;font-weight:600}
+.dr .v.out{color:var(--spent)}.dr .v.in{color:var(--good)}
+.dr.eq{font-weight:800;border-bottom:0}
+#dtt2{font-size:16px}
+.mini{margin-top:12px;padding:12px;border-radius:16px;background:var(--chip);border:1px solid var(--line);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mini:active{transform:scale(.99)}
+.mh{display:flex;justify-content:space-between;color:var(--mute);font-size:12px;font-weight:600;margin-bottom:8px}
+.mb{display:flex;align-items:center;gap:14px}
+.mb svg{flex:none}
+#minil{flex:1;min-width:0}
+.ml{display:flex;align-items:center;gap:8px;font-size:13px;padding:2px 0}
+.ml i{width:10px;height:10px;border-radius:3px;flex:none}
+.ml span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ml b{font-variant-numeric:tabular-nums;font-weight:700}
+.ml em{font-style:normal;color:var(--mute);width:34px;text-align:right}
+.qa{display:grid;grid-template-columns:1fr 1.75fr 1fr;gap:8px}.qa button{padding:11px 4px;font-size:14px;font-weight:700;border-radius:14px;min-height:46px;white-space:nowrap}
+#c4{scroll-margin-top:76px;padding:12px}#c4 .f{margin-top:12px}.qa button.on{box-shadow:0 0 0 3px rgba(255,255,255,.7),0 6px 16px rgba(5,70,66,.35)}
 /* splash + motion */
 #splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:radial-gradient(circle at 50% 38%,#12b5a8 0,#0b8f86 38%,#064a49 100%);transition:opacity .6s ease,visibility .6s}
 #splash.out{opacity:0;visibility:hidden}
@@ -221,32 +250,34 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 
 <!-- App -->
 <div id="appwrap" hidden>
-<div class="top"><h1>Siraj Account Balance</h1><span><button class="ghost" id="rf" title="Refresh">↻</button> <a id="sheet" target="_blank" rel="noopener" href="#">Open database ↗</a> <button class="ghost" id="lo" title="Log out">Log out</button></span></div>
-<div id="st">Loading…</div>
+<div class="top"><h1>Siraj Account Balance</h1><span><button class="ghost" id="rf" title="Refresh">↻</button> <button class="ghost" id="lk" title="Lock the app">🔒 Lock</button></span></div>
 
 <div id="cards" class="loading">
 <div id="bar"><div><small>Balance</small><b id="bb">0.00</b></div><div><small>R. Balance</small><b id="br">0.00</b></div></div>
 
 <div class="card">
   <div class="grid">
-    <div class="stat big" id="balBox"><small>Balance (income received − spent) · MVR</small><b id="bal">0.00</b></div>
-    <div class="stat"><small>Spent</small><b id="spent">0.00</b></div>
-    <div class="stat"><small>Income received</small><b id="incd">0.00</b></div>
-    <div class="stat" id="abBox"><small>A. Balance (after pending)</small><b id="ab">0.00</b></div>
-    <div class="stat" id="rbBox"><small>R. Balance (+ expected income)</small><b id="rb">0.00</b></div>
-    <div class="stat"><small>Expense pending</small><b id="upt">0.00</b></div>
-    <div class="stat"><small id="mlab">Spent this month</small><b id="msp">0.00</b></div>
+    <div class="stat big" id="balBox" data-d="bal"><small>Balance (income received − spent) · MVR</small><b id="bal">0.00</b></div>
+    <div class="stat" data-d="spent"><small>Spent</small><b id="spent">0.00</b></div>
+    <div class="stat" data-d="incd"><small>Income received</small><b id="incd">0.00</b></div>
+    <div class="stat" id="abBox" data-d="ab"><small>A. Balance (after pending)</small><b id="ab">0.00</b></div>
+    <div class="stat" id="rbBox" data-d="rb"><small>R. Balance (+ expected income)</small><b id="rb">0.00</b></div>
+    <div class="stat" data-d="upt"><small>Expense pending</small><b id="upt">0.00</b></div>
+    <div class="stat" data-d="msp"><small id="mlab">Spent this month</small><b id="msp">0.00</b></div>
   </div>
   <div class="bud" id="bud" style="display:none">
     <div class="bl"><span id="budt"></span><span id="budp"></span></div>
     <div class="bt"><i id="budf"></i></div>
     <p id="budm"></p>
   </div>
+  <div class="mini" id="mini" style="display:none" role="button" tabindex="0" aria-label="Spending by category this month, tap for details">
+    <div class="mh"><span id="minit">By category</span><span>details ›</span></div>
+    <div class="mb"><svg id="donut" viewBox="0 0 42 42" width="96" height="96" aria-hidden="true"></svg><div id="minil"></div></div>
+  </div>
 </div>
 
 <div class="card" id="c4">
-  <h2>Add</h2>
-  <div class="seg"><button id="tE" class="on">Expense</button><button id="tF">Expense-Foreign</button><button id="tI">Income</button></div>
+  <div class="qa"><button id="tE">Expense</button><button id="tF">Expense-Foreign</button><button id="tI">Income</button></div>
   <div class="f" id="fe">
     <input id="en" class="w" placeholder="Name" list="names" autocomplete="off">
     <select id="ec" aria-label="Category"></select>
@@ -319,23 +350,19 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
     <div><label for="eday">Month ends on day (1–28; 31 = calendar month)</label><input id="eday" type="number" min="1" max="31" step="1" inputmode="numeric"></div>
   </div>
   <p class="mute sm" id="sdn"></p>
+  <p class="sm"><a id="sheet" target="_blank" rel="noopener" href="#">Open database ↗</a></p>
+  <div id="st">Loading…</div>
   <div id="pinrow">
     <label for="pin">App PIN (4–6 digits, this phone only)</label>
     <div class="pinrow"><input id="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="New PIN"><button id="pset">Save</button><button id="prem" class="ghost">Remove</button></div>
     <p class="mute sm" id="pst"></p>
   </div>
-  <div id="improw">
-    <label for="ou">Import from your old Google Sheet (one time)</label>
-    <input id="ou" type="url" placeholder="Old web app URL (…/exec)" autocomplete="off">
-    <input id="ok" type="password" placeholder="Old secret key" autocomplete="off">
-    <button id="oimp" class="ghost">Import old data</button>
-    <p class="mute sm">Copies your old expenses, income, expenses ahead and settings into this database. Safe to repeat: nothing is added twice.</p>
-  </div>
 </div>
 </div>
-<div id="foot"><a href="#" id="dis">Change connection</a> · <a href="#" id="lo2">Log out</a></div>
+<div id="foot"><span id="who"></span></div>
 </div>
 </main>
+<div id="dt" hidden><div class="dtbox" role="dialog" aria-modal="true" aria-labelledby="dtt"><div class="dth"><b id="dtt"></b><button class="ghost" id="dtx" aria-label="Close">✕</button></div><div id="dtn" class="mute sm"></div><div id="dtl"></div><div id="dtt2" class="tot"></div></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -343,13 +370,14 @@ const CATS=["Bills","Food","Shop","Hotel","Transport","Health","Other"];
 const COLORS=["#0b8f86","#e0a526","#6a7be0","#e0645a","#58b368","#a35fc7","#7a8b99"];
 const KEYS=["c1","c2","c3","c6","c5"];
 function blank(){return {bank:0,income:0,budget:0,end:24,rlkr:0.05,rusd:15.42,exp:[],inc:[],up:[],closed:{}}}
-let S=blank(),PEND=[],PENDI=[],ready=false,saving=false,unsaved=false,timer=null,lastLoad=0,curMon=null,q="",tab="e",hiddenAt=0,tt=null;
+let S=blank(),PEND=[],PENDI=[],ready=false,saving=false,unsaved=false,timer=null,lastLoad=0,curMon=null,q="",tab="",hiddenAt=0,tt=null;
 const $=id=>document.getElementById(id);
 const num=v=>{const x=parseFloat(v);return isFinite(x)?x:0};
 const fmt=x=>x.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const sum=a=>a.reduce((s,r)=>s+num(r.a),0);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-function status(t,bad){const e=$("st");e.textContent=t;e.className=bad?"bad":""}
+let lastBad="";
+function status(t,bad){const e=$("st");e.textContent=t;e.className=bad?"bad":"";if(bad){if(t!==lastBad)toast(t.replace(/ – tap here to retry$/,"")+" – tap ↻ to retry");lastBad=t}else lastBad=""}
 function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 function mk(tag,props){const e=document.createElement(tag);Object.assign(e,props||{});return e}
@@ -424,21 +452,8 @@ function sortedItems(exp,inc){
 }
 /*ENDPURE*/
 
-/* ---------- one-time import from the old Google Sheet (Apps Script) ---------- */
-async function call(url,opt){
-  const ac=new AbortController(),t=setTimeout(()=>ac.abort(),45000);
-  try{
-    const r=await fetch(url,Object.assign({signal:ac.signal},opt||{}));
-    const txt=await r.text();
-    try{return JSON.parse(txt)}catch(e){throw new Error("The script returned a web page, not data. In Apps Script: Deploy > Manage deployments > set 'Who has access' to Anyone, then New version.")}
-  }catch(e){
-    if(e.name==="AbortError")throw new Error("The Google script took too long (45s). Tap to retry.");
-    throw e;
-  }finally{clearTimeout(t)}
-}
 /* ---------- talking to Supabase (plain fetch, no library) ---------- */
 let SB=null;
-const OLD=lsGet("cfg");
 function dbUrl(){try{return "https://supabase.com/dashboard/project/"+new URL(SB.url).hostname.split(".")[0]+"/editor"}catch(e){return "#"}}
 async function http(url,opt){
   const ac=new AbortController(),t=setTimeout(()=>ac.abort(),30000);
@@ -526,6 +541,55 @@ async function loadInner(){
 $("st").onclick=()=>{if($("st").className==="bad")load()};
 $("rf").onclick=()=>load();
 
+/* ---------- tap a card to see the details ---------- */
+function exRows(list){
+  return list.map((r,i)=>({r,i})).sort((p,q)=>String(q.r.d||"").localeCompare(String(p.r.d||""))||q.i-p.i).map(x=>({
+    n:x.r.n||"(no name)",
+    m:[catOf(x.r),x.r.cur?fmt(num(x.r.o))+" "+x.r.cur+" @ "+x.r.r:"",x.r.t!==catOf(x.r)?x.r.t:"",dlabel(x.r.d)].filter(Boolean).join(" · "),
+    v:"−"+fmt(num(x.r.a)),k:"out"}));
+}
+function showDetail(k){
+  const tm=tmk(),spent=sum(S.exp),incd=sum(S.inc),upl=activeUp(S.up,tm),upt=sum(upl);
+  const bal=num(S.bank)+incd-spent,ab=bal-upt,rb=ab+num(S.income);
+  let title="",note="",rows=[],tot=null;
+  if(k==="bal"){title="Balance";note="Income received minus everything spent.";
+    rows=[{n:"Bank amount",v:fmt(num(S.bank)),k:"in"},{n:"Income entries ("+S.inc.length+")",v:"+"+fmt(incd),k:"in"},{n:"Spent ("+S.exp.length+" expenses)",v:"−"+fmt(spent),k:"out"}];tot=["Balance",bal]}
+  else if(k==="spent"){title="Spent";note=S.exp.length+" expense(s), newest first.";rows=exRows(S.exp);tot=["Total spent",spent]}
+  else if(k==="incd"){title="Income received";note="Bank amount plus every income entry you added.";
+    rows=[{n:"Bank amount",v:fmt(num(S.bank)),k:"in"}].concat(S.inc.map((r,i)=>({r,i})).sort((p,q)=>String(q.r.d||"").localeCompare(String(p.r.d||""))||q.i-p.i).map(x=>({n:x.r.n||"(no name)",m:dlabel(x.r.d),v:"+"+fmt(num(x.r.a)),k:"in"})));
+    tot=["Income received",num(S.bank)+incd]}
+  else if(k==="ab"){title="A. Balance";note="Balance after the expenses still pending.";
+    rows=[{n:"Balance",v:fmt(bal)},{n:"Expense pending",v:"−"+fmt(upt),k:"out"}];tot=["A. Balance",ab]}
+  else if(k==="rb"){title="R. Balance";note="A. Balance plus the income you expect.";
+    rows=[{n:"A. Balance",v:fmt(ab)},{n:"Expected income",v:"+"+fmt(num(S.income)),k:"in"}];tot=["R. Balance",rb]}
+  else if(k==="upt"){title="Expense pending";note=upl.length?"Still to pay. Recurring bills you already paid this month are not counted.":"Nothing pending.";
+    rows=upl.map(r=>({n:(r.n||"(no name)")+(r.rep?" 🔁":""),m:r.rep?"Repeats monthly":"",v:fmt(num(r.a)),k:"out"}));tot=["Total pending",upt]}
+  else if(k==="msp"){const l=S.exp.filter(r=>mkey(r.d)===tm),t=sum(l);
+    title="Spent this month"+(eday()>=29?"":" · "+rlabel(tm));note=l.length+" expense(s) in this period, newest first.";rows=exRows(l);tot=["Total this month",t];
+    const bud=num(S.budget);if(bud>0)note+=" Budget "+fmt(bud)+(t>bud?" – over by "+fmt(t-bud):" – "+fmt(bud-t)+" left")+".";}
+  else return;
+  $("dtt").textContent=title;$("dtn").textContent=note;
+  const box=$("dtl");box.textContent="";
+  rows.slice(0,300).forEach(r=>{
+    const d=mk("div",{className:"dr"+(r.eq?" eq":"")}),l=mk("div"),v=mk("div",{className:"v"+(r.k?" "+r.k:""),textContent:r.v});
+    l.append(mk("span",{textContent:r.n}));if(r.m)l.append(mk("small",{textContent:r.m}));
+    d.append(l,v);box.append(d);
+  });
+  if(rows.length>300)box.append(mk("p",{className:"mute sm",textContent:"Showing the latest 300. Use History for older ones."}));
+  if(!rows.length)box.append(mk("p",{className:"mute",textContent:"Nothing to show."}));
+  const t2=$("dtt2");t2.textContent="";t2.append(mk("span",{textContent:tot[0]}),mk("span",{textContent:fmt(tot[1])}));
+  $("dt").hidden=false;$("dt").querySelector(".dtbox").scrollTop=0;
+}
+function closeDetail(){$("dt").hidden=true}
+document.querySelectorAll(".stat[data-d]").forEach(e=>{
+  e.setAttribute("role","button");e.tabIndex=0;
+  e.addEventListener("click",()=>showDetail(e.dataset.d));
+  e.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();showDetail(e.dataset.d)}});
+});
+$("dtx").onclick=closeDetail;
+$("dt").addEventListener("click",ev=>{if(ev.target===$("dt"))closeDetail()});
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape")closeDetail()});
+
 /* ---------- calculations ---------- */
 function totals(){
   const tm=tmk(),spent=sum(S.exp),incd=sum(S.inc),up=sum(activeUp(S.up,tm));
@@ -567,6 +631,31 @@ function renderHist(){
   $("hs").textContent=fmt(sum(S.exp.filter(r=>matches(r,curMon,q,true))));
   $("hi").textContent=fmt(sum(S.inc.filter(r=>matches(r,curMon,q,false))));
 }
+function renderMini(){
+  const tm=tmk(),rows=S.exp.filter(r=>mkey(r.d)===tm),tot=sum(rows),box=$("mini");
+  if(!rows.length||!(tot>0)){box.style.display="none";return}
+  box.style.display="";
+  let ct=catTotals(rows).filter(c=>c[1]>0);
+  if(ct.length>5){const rest=ct.slice(4).reduce((a,c)=>a+c[1],0);ct=ct.slice(0,4).concat([["Others",rest]])}
+  $("minit").textContent="By category · "+(eday()>=29?mlabel(tm):rlabel(tm));
+  const svg=$("donut"),NS="http://www.w3.org/2000/svg";svg.textContent="";
+  const mkc=(a)=>{const c=document.createElementNS(NS,"circle");Object.keys(a).forEach(k=>c.setAttribute(k,a[k]));return c};
+  svg.append(mkc({cx:21,cy:21,r:15.9155,fill:"none",stroke:"var(--line)","stroke-width":6}));
+  let acc=0;
+  ct.forEach((c,k)=>{
+    const pct=c[1]/tot*100;
+    svg.append(mkc({cx:21,cy:21,r:15.9155,fill:"none",stroke:COLORS[k%COLORS.length],"stroke-width":6,"stroke-dasharray":Math.max(pct-0.6,0.1)+" "+(100-Math.max(pct-0.6,0.1)),"stroke-dashoffset":25-acc,transform:"rotate(0 21 21)"}));
+    acc+=pct;
+  });
+  const t=document.createElementNS(NS,"text");t.setAttribute("x",21);t.setAttribute("y",22.6);t.setAttribute("text-anchor","middle");t.setAttribute("font-size",tot>=100000?4.4:5.2);t.setAttribute("font-weight",800);t.setAttribute("fill","currentColor");t.textContent=fmt(tot);svg.append(t);
+  const L=$("minil");L.textContent="";
+  ct.forEach((c,k)=>{
+    const d=mk("div",{className:"ml"}),dot=mk("i");dot.style.background=COLORS[k%COLORS.length];
+    d.append(dot,mk("span",{textContent:c[0]}),mk("b",{textContent:fmt(c[1])}),mk("em",{textContent:Math.round(c[1]/tot*100)+"%"}));L.append(d);
+  });
+}
+$("mini").addEventListener("click",()=>showDetail("msp"));
+$("mini").addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();showDetail("msp")}});
 function renderChart(){
   const rows=S.exp.filter(r=>curMon==="all"||mkey(r.d)===curMon);
   const ct=catTotals(rows),tot=sum(rows),mx=ct.length?ct[0][1]:0,box=$("chart");
@@ -600,7 +689,7 @@ function renderUp(){
   });
 }
 function render(){
-  renderUp();renderHist();renderForeign();renderChart();
+  renderUp();renderHist();renderForeign();renderChart();renderMini();
   const dl=$("names");dl.textContent="";const seen=new Set();
   for(let i=S.exp.length-1;i>=0&&seen.size<60;i--){const n=(S.exp[i].n||"").trim(),k=n.toLowerCase();if(n&&!seen.has(k)){seen.add(k);dl.append(new Option(n))}}
   $("bank").value=S.bank;$("inc").value=S.income;$("bud2").value=S.budget||"";$("eday").value=eday();$("rlkr").value=S.rlkr;$("rusd").value=S.rusd;
@@ -622,7 +711,13 @@ $("eday").onchange=e=>{e.target.value=eday()};
 /* ---------- adding ---------- */
 CATS.forEach(c=>{$("ec").append(new Option(c,c));$("fc").append(new Option(c,c))});
 function setTab(t){tab=t;$("fe").style.display=t==="e"?"":"none";$("fi").style.display=t==="i"?"":"none";$("ff").style.display=t==="f"?"":"none";$("tE").classList.toggle("on",t==="e");$("tI").classList.toggle("on",t==="i");$("tF").classList.toggle("on",t==="f");if(t==="f")useRate()}
-$("tE").onclick=()=>setTab("e");$("tI").onclick=()=>setTab("i");$("tF").onclick=()=>setTab("f");
+function openTab(t){
+  if(tab===t){setTab("");return}
+  setTab(t);
+  $("c4").scrollIntoView({behavior:"smooth",block:"start"});
+  setTimeout(()=>{const f=$(t==="e"?"en":t==="f"?"fn":"in");if(f)f.focus({preventScroll:true})},300);
+}
+$("tE").onclick=()=>openTab("e");$("tI").onclick=()=>openTab("i");$("tF").onclick=()=>openTab("f");
 $("en").addEventListener("input",()=>{
   const v=$("en").value.trim().toLowerCase();if(!v)return;
   for(let i=S.exp.length-1;i>=0;i--){if((S.exp[i].n||"").toLowerCase()===v){$("ec").value=CATS.includes(catOf(S.exp[i]))?catOf(S.exp[i]):"Other";break}}
@@ -695,7 +790,7 @@ $("csv").onclick=()=>{
 /* ---------- PIN lock (this phone only) ---------- */
 const canPin=!!(window.crypto&&crypto.subtle);
 async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("trk:"+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
-function lock(){if(!canPin||!lsGet("pin"))return;$("lock").hidden=false;$("lpin").value="";$("lerr").textContent="";setTimeout(()=>$("lpin").focus(),50)}
+function lock(){if(!canPin||!lsGet("pin"))return;closeDetail();$("lock").hidden=false;$("lpin").value="";$("lerr").textContent="";setTimeout(()=>$("lpin").focus(),50)}
 $("lgo").onclick=async()=>{
   const h=await sha($("lpin").value.trim());
   if(h===lsGet("pin"))$("lock").hidden=true;else{$("lerr").textContent="Wrong PIN";$("lpin").value=""}
@@ -736,7 +831,6 @@ $("cgo").onclick=async()=>{
     $("cerr").textContent=/Invalid login|invalid_grant|credentials/i.test(m)?"Wrong email or password.":/Failed to fetch|NetworkError|Load failed/i.test(m)?"Could not connect. Check the project URL and your signal.":m;
   }
 };
-$("dis").onclick=e=>{e.preventDefault();["sb","sbcfg","cache"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});SB=null;ready=false;showSetup("")};
 
 function logout(e){
   if(e&&e.preventDefault)e.preventDefault();
@@ -748,35 +842,16 @@ function logout(e){
   PEND=[];PENDI=[];SB=null;ready=false;S=blank();
   $("lock").hidden=true;$("appwrap").hidden=true;showSetup("You are logged out. Enter your password to log in again.");
 }
-$("lo").onclick=logout;$("lo2").onclick=logout;
-
-if(OLD){$("ou").value=OLD.url||"";$("ok").value=OLD.key||""}
-$("oimp").onclick=async()=>{
-  const url=$("ou").value.trim(),key=$("ok").value.trim();
-  if(!/^https:\/\/script\.google\.com\/.+\/exec/.test(url)||!key){toast("Enter the old script URL and key");return}
-  if(!confirm("Import from the old Google Sheet? This replaces your current settings and Expenses ahead with the old ones. Expenses and income are added without duplicates."))return;
-  status("Importing…");
-  try{
-    const j=await call(url+"?action=get&key="+encodeURIComponent(key));
-    if(!j.ok)throw new Error(j.error||"error");
-    const d=j.data;
-    S.bank=d.bank;S.income=d.income;S.budget=d.budget;S.end=d.end||24;S.rlkr=d.rlkr||0.05;S.rusd=d.rusd||15.42;S.up=d.up||[];
-    (d.exp||[]).forEach((x,i)=>PEND.push(Object.assign({},x,{id:"imp-e"+i})));
-    (d.inc||[]).forEach((x,i)=>PENDI.push(Object.assign({},x,{id:"imp-i"+i})));
-    lsSet("pend",PEND);lsSet("pendi",PENDI);lsSet("cache",S);
-    await push();
-    if(PEND.length||PENDI.length)throw new Error("Could not save to the database");
-    await load();toast("Imported ✓");
-  }catch(e){status("Import failed: "+String(e.message||e).slice(0,140),true)}
-};
+$("lk").onclick=()=>{if(!lsGet("pin")){toast("Set a PIN in Settings first, then tap Lock");return}lock()};
 
 function start(){
+  $("who").textContent="huxsiraj@gmail.com";
   $("setup").hidden=true;$("appwrap").hidden=false;
   const c=lsGet("cache");if(c){S=Object.assign(blank(),c);S.inc=c.inc||[];setClosed(null);render();totals()}
   load();
 }
 PEND=lsGet("pend")||[];PENDI=lsGet("pendi")||[];SB=lsGet("sb");
-pinUI();lock();setTab("e");
+pinUI();lock();setTab("");
 if(SB&&SB.url&&SB.rt)start();else showSetup("");
 window.hideSplash&&window.hideSplash();
 
