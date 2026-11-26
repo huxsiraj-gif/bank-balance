@@ -1,13 +1,13 @@
 {
-  "name": "Bank Balance",
-  "short_name": "Bank Balance",
+  "name": "Track Income",
+  "short_name": "Track Income",
   "description": "Track expenses and bank balance, saved to your Google Sheet",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f6e56",
-  "theme_color": "#0f6e56",
+  "theme_color": "#0b8f86",
   "icons": [
     {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
     {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
