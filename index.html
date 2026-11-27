@@ -150,9 +150,31 @@ input[type=checkbox]{width:20px;height:20px;min-height:0;padding:0}
 .tot.in span:last-child{color:var(--good)}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;display:none;align-items:center;gap:14px;background:#10302f;color:#fff;padding:10px 12px 10px 16px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);max-width:92vw}
 #toast button{min-height:36px;padding:4px 12px;background:rgba(255,255,255,.18);box-shadow:none;color:#fff}
-#lock{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
+#lock{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 50% 18%,#12b5a8 0,#0b8f86 34%,#064a49 72%,#04302f 100%);display:flex;align-items:center;justify-content:center;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));color:#fff;overflow:auto;transition:opacity .25s ease}
 #lock[hidden]{display:none}
-#lock input{max-width:220px;text-align:center;letter-spacing:.4em}
+#lock.ok{opacity:0}
+.lk-wrap{width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.lk-logo{width:84px;height:84px;border-radius:22px;box-shadow:0 12px 34px rgba(0,0,0,.35);animation:lk-pop .6s cubic-bezier(.2,.9,.3,1.2) both}
+#lock.ok .lk-logo{animation:lk-ok .25s ease both}
+.lk-wrap h1{color:#fff;font-size:24px;margin:16px 0 4px;letter-spacing:.2px}
+.lk-sub{color:#d6f5f1;font-size:14px;margin:0 0 18px}
+.lk-dots{display:flex;gap:14px;height:20px;align-items:center;justify-content:center}
+.lk-dots i{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,.75);transition:background .12s ease,transform .12s ease}
+.lk-dots i.on{background:#fff;transform:scale(1.08)}
+#lock.bad .lk-dots{animation:lk-shake .45s ease}
+#lock.bad .lk-dots i{border-color:#ffb4b4;background:#ff8f8f}
+#lock.ok .lk-dots i{border-color:#9ff5c8;background:#9ff5c8}
+.lk-err{min-height:22px;margin:10px 0 6px;color:#ffd0d0;font-size:14px;font-weight:600}
+.lk-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;justify-items:center;width:100%;max-width:300px}
+.lk-pad button{width:min(78px,21vw);height:min(78px,21vw);border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;font-size:30px;font-weight:600;line-height:1;padding:0;box-shadow:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:transform .1s ease,background .1s ease;font-variant-numeric:tabular-nums}
+.lk-pad button:active{transform:scale(.92);background:rgba(255,255,255,.34)}
+.lk-pad button.fn{background:transparent;border-color:transparent;font-size:15px;font-weight:700;color:#d6f5f1}
+.lk-pad button.fn:active{background:rgba(255,255,255,.18)}
+@keyframes lk-pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@keyframes lk-ok{to{transform:scale(1.12)}}
+@keyframes lk-shake{20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-7px)}80%{transform:translateX(7px)}}
+@media (max-height:640px){.lk-logo{width:60px;height:60px;border-radius:16px}.lk-wrap h1{font-size:20px;margin-top:10px}.lk-sub{margin-bottom:10px}.lk-pad{gap:8px}.lk-pad button{width:min(64px,18vw);height:min(64px,18vw);font-size:26px}}
+@media (prefers-reduced-motion:reduce){.lk-logo,#lock.bad .lk-dots{animation:none}}
 .top>span{display:flex;align-items:center;gap:2px;flex-shrink:0}
 .top a{white-space:nowrap}
 .top h1{margin:6px 0;line-height:1.15}
@@ -222,12 +244,15 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <body>
 <div id="splash"><div class="lg"><img src="icon-512.png" alt=""></div><div class="tt">Income Tracker</div><div class="sb">Hussain Siraj</div><div class="bar"><i></i></div></div>
 <script>(function(){var t=Date.now();window.hideSplash=function(){var s=document.getElementById("splash");if(!s)return;var w=Math.max(0,1900-(Date.now()-t));setTimeout(function(){s.classList.add("out");setTimeout(function(){s.remove()},700)},w)};setTimeout(window.hideSplash,3500)})();</script>
-<div id="lock" hidden>
-  <h1>Income Tracker</h1>
-  <p class="mute">Enter your PIN</p>
-  <input id="lpin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" aria-label="PIN">
-  <button id="lgo">Unlock</button>
-  <p id="lerr" class="mute"></p>
+<div id="lock" hidden role="dialog" aria-modal="true" aria-label="Unlock Income Tracker">
+  <div class="lk-wrap">
+    <img class="lk-logo" src="icon-512.png" alt="">
+    <h1>Welcome back</h1>
+    <p class="lk-sub">Enter your PIN to open Income Tracker</p>
+    <div id="lk-dots" class="lk-dots" aria-live="polite"></div>
+    <p id="lerr" class="lk-err" role="alert"></p>
+    <div id="lk-pad" class="lk-pad"></div>
+  </div>
 </div>
 <main>
 
@@ -354,7 +379,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   <div id="st">Loading…</div>
   <div id="pinrow">
     <label for="pin">App PIN (4–6 digits, this phone only)</label>
-    <div class="pinrow"><input id="pin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="New PIN"><button id="pset">Save</button><button id="prem" class="ghost">Remove</button></div>
+    <div class="pinrow"><input id="pin" type="tel" inputmode="numeric" maxlength="6" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="New PIN (4–6 digits)" style="-webkit-text-security:disc"><button id="pset">Save</button><button id="prem" class="ghost">Remove</button></div>
     <p class="mute sm" id="pst"></p>
   </div>
 </div>
@@ -790,19 +815,59 @@ $("csv").onclick=()=>{
 /* ---------- PIN lock (this phone only) ---------- */
 const canPin=!!(window.crypto&&crypto.subtle);
 async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("trk:"+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
-function lock(){if(!canPin||!lsGet("pin"))return;closeDetail();$("lock").hidden=false;$("lpin").value="";$("lerr").textContent="";setTimeout(()=>$("lpin").focus(),50)}
-$("lgo").onclick=async()=>{
-  const h=await sha($("lpin").value.trim());
-  if(h===lsGet("pin"))$("lock").hidden=true;else{$("lerr").textContent="Wrong PIN";$("lpin").value=""}
-};
-$("lpin").addEventListener("keydown",e=>{if(e.key==="Enter")$("lgo").click()});
+let lkv="",lkBusy=false;
+const PINMAX=6;
+function buzz(x){try{navigator.vibrate&&navigator.vibrate(x)}catch(e){}}
+function lkLen(){const n=parseInt(lsGet("pinlen"),10);return n>=4&&n<=6?n:0}
+function lkDots(){
+  const n=lkLen()||Math.max(4,lkv.length),box=$("lk-dots");box.textContent="";
+  for(let i=0;i<n;i++){const d=document.createElement("i");if(i<lkv.length)d.className="on";box.append(d)}
+}
+function lock(){
+  if(!canPin||!lsGet("pin"))return;
+  closeDetail();lkv="";lkBusy=false;$("lerr").textContent="";
+  $("lock").classList.remove("ok","bad");$("lock").hidden=false;lkDots();
+}
+async function lkPress(d){
+  if(lkBusy||lkv.length>=PINMAX)return;
+  lkv+=d;lkDots();$("lerr").textContent="";buzz(8);
+  const need=lkLen();
+  if(need?lkv.length<need:lkv.length<4)return;
+  lkBusy=true;
+  const good=(await sha(lkv))===lsGet("pin");
+  if(good){
+    $("lock").classList.add("ok");buzz(20);
+    setTimeout(()=>{$("lock").hidden=true;$("lock").classList.remove("ok");lkv="";lkBusy=false},260);
+  }else if(lkv.length>=(need||PINMAX)){
+    $("lock").classList.add("bad");$("lerr").textContent="Wrong PIN. Try again.";buzz([60,40,60]);
+    setTimeout(()=>{lkv="";lkDots();$("lock").classList.remove("bad");lkBusy=false},520);
+  }else lkBusy=false;
+}
+function lkDel(){if(lkBusy)return;lkv=lkv.slice(0,-1);$("lerr").textContent="";lkDots()}
+function lkClear(){if(lkBusy)return;lkv="";$("lerr").textContent="";lkDots()}
+(function(){
+  const pad=$("lk-pad");
+  ["1","2","3","4","5","6","7","8","9","clr","0","del"].forEach(k=>{
+    const b=document.createElement("button");b.type="button";
+    if(k==="clr"){b.className="fn";b.textContent="Clear";b.setAttribute("aria-label","Clear");b.onclick=lkClear}
+    else if(k==="del"){b.className="fn";b.textContent="⌫";b.style.fontSize="26px";b.setAttribute("aria-label","Delete");b.onclick=lkDel}
+    else{b.textContent=k;b.onclick=()=>lkPress(k)}
+    pad.append(b);
+  });
+})();
+document.addEventListener("keydown",e=>{
+  if($("lock").hidden)return;
+  if(/^\d$/.test(e.key)){e.preventDefault();lkPress(e.key)}
+  else if(e.key==="Backspace"){e.preventDefault();lkDel()}
+  else if(e.key==="Escape"){lkClear()}
+});
 function pinUI(){const on=!!lsGet("pin");$("pst").textContent=on?"PIN is on for this phone. It asks again after the app has been in the background for a minute.":"PIN is off.";$("prem").style.display=on?"":"none";if(!canPin)$("pinrow").style.display="none"}
 $("pset").onclick=async()=>{
   const v=$("pin").value.trim();
   if(!/^\d{4,6}$/.test(v)){toast("PIN must be 4–6 digits");return}
-  lsSet("pin",await sha(v));$("pin").value="";pinUI();toast("PIN saved");
+  lsSet("pin",await sha(v));lsSet("pinlen",v.length);$("pin").value="";pinUI();toast("PIN saved");
 };
-$("prem").onclick=()=>{try{localStorage.removeItem("pin")}catch(e){}pinUI();toast("PIN removed")};
+$("prem").onclick=()=>{try{localStorage.removeItem("pin");localStorage.removeItem("pinlen")}catch(e){}pinUI();toast("PIN removed")};
 
 document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="hidden"){hiddenAt=Date.now();return}
@@ -838,7 +903,7 @@ function logout(e){
   const msg=un?("You have "+un+" entry(s) not saved to the database yet. Logging out will lose them. Log out anyway?"):"Log out of Income Tracker on this phone? Your data stays safe in your database.";
   if(!confirm(msg))return;
   if(SB&&SB.at){fetch(SB.url+"/auth/v1/logout",{method:"POST",headers:{apikey:SB.key,Authorization:"Bearer "+SB.at}}).catch(()=>{})}
-  ["sb","cache","pend","pendi","pin"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
+  ["sb","cache","pend","pendi","pin","pinlen"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
   PEND=[];PENDI=[];SB=null;ready=false;S=blank();
   $("lock").hidden=true;$("appwrap").hidden=true;showSetup("You are logged out. Enter your password to log in again.");
 }
