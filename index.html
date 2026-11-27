@@ -290,6 +290,10 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 .fpr.tap{cursor:pointer;-webkit-tap-highlight-color:transparent}.fpr.tap:active{background:var(--chip)}
 #fpcalc .gap{display:block;margin-top:2px}
 #fpcalc .up{color:var(--bad)}#fpcalc .dn{color:var(--accent)}
+
+.cvr{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;margin-top:8px}
+.cvr b{font-size:14px;color:var(--accent);letter-spacing:.04em}
+#cvn{margin:8px 2px 0;line-height:1.5}
 </style>
 </head>
 <body>
@@ -461,6 +465,14 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
       <button id="fpadd" class="w">Add foreign purchase</button>
       <button id="fpcancel" class="w ghost" style="display:none">Cancel editing</button>
     </div>
+  </div>
+  <div class="card" id="cvcard">
+    <h2>Currency converter</h2>
+    <div class="cvr"><b>USD</b><input id="cvu" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="US dollars"></div>
+    <div class="cvr"><b>LKR</b><input id="cvl" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Sri Lankan rupees"></div>
+    <div class="cvr"><b>MVR</b><input id="cvm" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Maldivian rufiyaa"></div>
+    <div class="mute sm" id="cvn"></div>
+    <button id="cvuse" class="ghost" style="width:100%;margin-top:4px">Use LKR + MVR in a new purchase ↑</button>
   </div>
   <div class="card"><h2>Purchases</h2><div id="fpl2"></div><p class="mute" id="fpe" style="display:none">No foreign purchases yet.</p></div>
   <p class="mute sm" style="text-align:center">Exchange rates: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">ExchangeRate-API</a> (mid-market, refreshed once a day by the provider). Your bank's own rate is what counts for your entries.</p>
@@ -1113,7 +1125,8 @@ async function fxLoad(force){
     else throw new Error("bad reply");
   }catch(e){if(FX)FX.fail=1;else FX={f:0,u:0,r:null,fail:1}}
   finally{clearTimeout(t)}
-  fxRender();fpCalc();
+  if(FX&&FX.r&&!$("cvu").value&&!$("cvl").value&&!$("cvm").value)$("cvu").value="1";
+  fxRender();fpCalc();cvCalc();
 }
 function fxCross(a,b){const r=FX&&FX.r;return r&&r[a]>0&&r[b]>0?r[b]/r[a]:0}   // 1 a = ? b
 function fxRender(){
@@ -1145,6 +1158,26 @@ function fpCalc(){
   }else e.textContent="Enter both amounts to see the rate.";
   fxRender();
 }
+/* currency converter (USD / LKR / MVR) */
+const CVK={cvu:"USD",cvl:"LKR",cvm:"MVR"};let cvLast="cvu";
+function cvCalc(){
+  const n=$("cvn");if(!n)return;
+  const r=FX&&FX.r;
+  if(!r){n.textContent=FX&&FX.fail?"Live rates are not available right now (no connection).":"Loading live rates…";return}
+  const src=$(cvLast),v=parseFloat(src.value);
+  if(isFinite(v)){const usd=v/r[CVK[cvLast]];Object.keys(CVK).forEach(id=>{if(id!==cvLast)$(id).value=(usd*r[CVK[id]]).toFixed(2)})}
+  else Object.keys(CVK).forEach(id=>{if(id!==cvLast)$(id).value=""});
+  n.textContent="1 USD = "+fmt(r.LKR)+" LKR = "+fmt(r.MVR)+" MVR · 1 LKR = "+(r.MVR/r.LKR).toFixed(4)+" MVR · 1 MVR = "+(r.LKR/r.MVR).toFixed(2)+" LKR";
+}
+Object.keys(CVK).forEach(id=>$(id).addEventListener("input",()=>{cvLast=id;cvCalc()}));
+$("cvuse").onclick=()=>{
+  const l=num($("cvl").value),m=num($("cvm").value);
+  if(!(l>0&&m>0)){toast("Enter an amount in the converter first");return}
+  if(fpEditId)fpFormReset();
+  $("fpc").value="LKR";$("fpo").value=l.toFixed(2);$("fpbm").value=m.toFixed(2);fpCalc();
+  $("fpv").scrollTo({top:0,behavior:"smooth"});toast("Filled in the form – add the bank details and save");
+};
+
 function fpFormReset(){
   fpEditId=null;
   ["fpname","fpo","fpbm","fpt","fpbk"].forEach(i=>$(i).value="");$("fpd").value=todayISO();$("fpc").value="LKR";
@@ -1179,7 +1212,7 @@ function fpDel(r){
 }
 function fpOpen(){
   $("fpv").hidden=false;document.body.style.overflow="hidden";$("fpv").scrollTop=0;
-  if(!fpEditId)$("fpd").value=todayISO();fpRender();fpCalc();fxRender();fxLoad(false);fpSync();
+  if(!fpEditId)$("fpd").value=todayISO();fpRender();fpCalc();fxRender();cvCalc();fxLoad(false);fpSync();
   try{history.replaceState(null,"","#foreign")}catch(e){}
 }
 function fpClose(){
