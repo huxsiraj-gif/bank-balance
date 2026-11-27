@@ -272,6 +272,17 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 #fpcalc{grid-column:1/-1;font-size:13px;color:var(--mute);margin:-2px 2px 2px}
 #fpcalc b{color:var(--accent)}
 #fpv .f label{margin:0 0 3px}
+
+/* ---- edit entry sheet ---- */
+#ed{position:fixed;inset:0;z-index:35;background:rgba(0,20,20,.55);display:flex;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#ed[hidden]{display:none}
+#ed .f{margin-top:6px}#ed label{margin:4px 0 3px}
+#ed .acts{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+#ed button.del{background:transparent;box-shadow:none;border:1px solid var(--bad);color:var(--bad)}
+#ed button.del.sure{background:var(--bad);color:#fff}
+#edconv{grid-column:1/-1;font-size:13px;color:var(--mute)}
+.h.tap{cursor:pointer;-webkit-tap-highlight-color:transparent}.h.tap:active{background:var(--chip)}
+.h.tap .ha::after{content:" ✎";font-weight:400;font-size:12px;opacity:.45}
 </style>
 </head>
 <body>
@@ -367,7 +378,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   <div id="exp"></div>
   <div class="tot"><span>Spent (shown)</span><span id="hs">0.00</span></div>
   <div class="tot in"><span>Income (shown)</span><span id="hi">0.00</span></div>
-  <p class="mute">History is read-only. <a id="sheet2" target="_blank" rel="noopener" href="#">Edit or delete in the database ↗</a>, then tap ↻ to refresh.</p>
+  <p class="mute">Tap any entry to edit its name, category, amount, date or note, or to delete it. <a id="sheet2" target="_blank" rel="noopener" href="#">Open database ↗</a></p>
   <button id="csv" class="ghost" style="width:100%">⬇ Download CSV</button>
 </div>
 
@@ -449,6 +460,17 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div id="foot"><span id="who"></span></div>
 </div>
 </main>
+<div id="ed" hidden><div class="dtbox" role="dialog" aria-modal="true" aria-labelledby="edt"><div class="dth"><b id="edt">Edit</b><button class="ghost" id="edx" aria-label="Close">✕</button></div>
+<div class="f">
+  <div class="w"><label for="edn">Name</label><input id="edn" autocomplete="off"></div>
+  <div class="w" id="edcw"><label for="edc">Category</label><select id="edc"></select></div>
+  <div class="w" id="edmw"><label for="eda">Amount (MVR)</label><input id="eda" type="number" step="0.01" inputmode="decimal"></div>
+  <div id="edfw" style="display:none;grid-column:1/-1"><div class="f" style="margin-top:0"><div><label for="edo">Amount (<span id="edcur"></span>)</label><input id="edo" type="number" step="0.01" inputmode="decimal"></div><div><label for="edr">Rate to MVR</label><input id="edr" type="number" step="0.0001" inputmode="decimal"></div></div></div>
+  <div id="edconv"></div>
+  <div class="w"><label for="edd">Date</label><input id="edd" type="date"></div>
+  <div class="w" id="edtw"><label for="edt2">Note</label><input id="edt2" autocomplete="off"></div>
+  <div class="acts"><button id="eddel" class="del">Delete</button><button id="edsave">Save changes</button></div>
+</div></div></div>
 <div id="dt" hidden><div class="dtbox" role="dialog" aria-modal="true" aria-labelledby="dtt"><div class="dth"><b id="dtt"></b><button class="ghost" id="dtx" aria-label="Close">✕</button></div><div id="dtn" class="mute sm"></div><div id="dtl"></div><div id="dtt2" class="tot"></div></div></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
@@ -457,7 +479,7 @@ const CATS=["Bills","Food","Shop","Hotel","Transport","Fuel","Health","Withdrawa
 const COLORS=["#0b8f86","#e0a526","#6a7be0","#e0645a","#58b368","#a35fc7","#7a8b99","#d96aa0","#8d6e4f","#3ab0d9"];
 const KEYS=["c1","c2","c3","c6","c5"];
 function blank(){return {bank:0,income:0,budget:0,end:24,rlkr:0.05,rusd:15.42,exp:[],inc:[],up:[],closed:{}}}
-let S=blank(),PEND=[],PENDI=[],ready=false,saving=false,unsaved=false,timer=null,lastLoad=0,curMon=null,q="",tab="",hiddenAt=0,tt=null;
+let S=blank(),PEND=[],PENDI=[],EQ=[],ready=false,saving=false,unsaved=false,timer=null,lastLoad=0,curMon=null,q="",tab="",hiddenAt=0,tt=null;
 const $=id=>document.getElementById(id);
 const num=v=>{const x=parseFloat(v);return isFinite(x)?x:0};
 const fmt=x=>x.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -572,7 +594,7 @@ async function rpc(name,args){
     const r=await http(SB.url+"/rest/v1/rpc/"+name,{method:"POST",headers:{apikey:SB.key,Authorization:"Bearer "+tk,"Content-Type":"application/json"},body:JSON.stringify(args||{})});
     if(r.status===401){SB.exp=0;continue}
     if(r.ok)return r.j;
-    if(r.j&&r.j.code==="PGRST202")throw new Error("The database setup is missing. Run supabase.sql in the Supabase SQL Editor.");
+    if(r.j&&r.j.code==="PGRST202")throw new Error("The database setup is missing or out of date. Run supabase.sql (or update-history.sql) in the Supabase SQL Editor.");
     throw new Error(jerr(r,"Database error"));
   }
   throw new Error("unauthorized");
@@ -598,6 +620,7 @@ async function push(){
   try{
     await apiSave(a,b);
     PEND.splice(0,a.length);PENDI.splice(0,b.length);lsSet("pend",PEND);lsSet("pendi",PENDI);
+    await flushEdits();
     saving=false;
     if(unsaved)return push();
     status("Saved ✓");
@@ -611,7 +634,7 @@ async function loadInner(){
   status("Loading…");
   try{
     if(timer){clearTimeout(timer);timer=null}
-    if(unsaved||PEND.length||PENDI.length){await push();if(unsaved||PEND.length||PENDI.length)throw new Error("not synced")}
+    if(unsaved||PEND.length||PENDI.length||EQ.length){await push();if(unsaved||PEND.length||PENDI.length||EQ.length)throw new Error("not synced")}
     const d=await apiGet();
     const prev=ready?Object.assign({},S.closed):null;   // keep sections open only while you are looking at them
     S=Object.assign(blank(),d);S.inc=d.inc||[];S.up=d.up||[];S.end=d.end||24;S.rlkr=d.rlkr||0.05;S.rusd=d.rusd||15.42;setClosed(prev);
@@ -713,6 +736,7 @@ function renderHist(){
     meta.append(document.createTextNode([r.t,(r.cur?fmt(num(r.o))+" "+r.cur+" @ "+r.r:""),dlabel(r.d)].filter(Boolean).join(" · ")));
     l.append(meta);
     d.append(l,mk("div",{className:"ha"+(it.t==="i"?" in":""),textContent:(it.t==="i"?"+":"−")+fmt(num(r.a))}));
+    d.classList.add("tap");d.tabIndex=0;d.setAttribute("role","button");d.onclick=()=>openEdit(it.t,r);d.onkeydown=ev=>{if(ev.key==="Enter")openEdit(it.t,r)};
     box.append(d);
   });
   $("hs").textContent=fmt(sum(S.exp.filter(r=>matches(r,curMon,q,true))));
@@ -846,7 +870,8 @@ function renderForeign(){
     l.append(mk("span",{textContent:r.n||"(no name)"}));
     meta.append(mk("em",{className:"chip",textContent:catOf(r)}));
     meta.append(document.createTextNode([fmt(num(r.o))+" "+r.cur+" @ "+r.r,r.t,dlabel(r.d)].filter(Boolean).join(" · ")));
-    l.append(meta);d.append(l,mk("div",{className:"ha",textContent:"−"+fmt(num(r.a))}));box.append(d);
+    l.append(meta);d.append(l,mk("div",{className:"ha",textContent:"−"+fmt(num(r.a))}));
+    d.classList.add("tap");d.onclick=()=>openEdit("e",r);box.append(d);
   });
 }
 $("iadd").onclick=()=>{
@@ -863,6 +888,62 @@ $("uadd").onclick=()=>{
   renderUp();totals();persist();
 };
 [["en","eadd"],["et","eadd"],["ea","eadd"],["in","iadd"],["ia","iadd"],["un","uadd"],["ua","uadd"]].forEach(p=>$(p[0]).addEventListener("keydown",e=>{if(e.key==="Enter")$(p[1]).click()}));
+
+/* ---------- edit / delete an entry from History ---------- */
+async function flushEdits(){
+  while(EQ.length){
+    const op=EQ[0];
+    await rpc("update_entry",{p:op.k==="d"?{kind:op.kind,id:op.id,del:true}:Object.assign({},op.r,{kind:op.kind})});
+    EQ.shift();lsSet("eq",EQ);
+  }
+}
+let edCur=null,edSure=false;
+function edConv(){
+  const o=num($("edo").value),r=num($("edr").value);
+  $("edconv").textContent=(edCur&&edCur.r.cur&&o>0&&r>0)?"= MVR "+fmt(Math.round(o*r*100)/100)+"  ("+fmt(o)+" "+edCur.r.cur+" × "+r+")":"";
+}
+function openEdit(kind,r){
+  if(!r.id){toast("Run update-history.sql in Supabase once, then tap ↻");return}
+  const ex=kind==="e",fx=ex&&!!r.cur;
+  edCur={kind,r};edSure=false;
+  $("edt").textContent=ex?(fx?"Edit foreign expense":"Edit expense"):"Edit income";
+  $("edn").value=r.n||"";$("edd").value=isoOf(r.d)||todayISO();$("edt2").value=r.t||"";
+  $("edtw").style.display=ex?"":"none";$("edcw").style.display=ex?"":"none";
+  const sel=$("edc");sel.textContent="";
+  if(ex){const c=catOf(r);(CATS.includes(c)?CATS:CATS.concat(c)).forEach(x=>sel.append(new Option(x,x)));sel.value=c}
+  $("edfw").style.display=fx?"":"none";$("edmw").style.display=fx?"none":"";
+  $("eda").value=r.a;
+  if(fx){$("edcur").textContent=r.cur;$("edo").value=r.o;$("edr").value=r.r}
+  edConv();
+  const b=$("eddel");b.textContent="Delete";b.classList.remove("sure");
+  $("ed").hidden=false;$("ed").querySelector(".dtbox").scrollTop=0;
+}
+function closeEdit(){$("ed").hidden=true;edCur=null}
+function edSave(){
+  if(!edCur)return;
+  const {kind,r}=edCur,ex=kind==="e",fx=ex&&!!r.cur;
+  let a=num($("eda").value),o=0,rt=0;
+  if(fx){o=num($("edo").value);rt=num($("edr").value);if(!(o>0&&rt>0)){toast("Enter the amount and the rate");return}a=Math.round(o*rt*100)/100}
+  else if(!(a>0)){toast("Enter an amount");return}
+  const nv={n:$("edn").value.trim(),d:$("edd").value||isoOf(r.d)||todayISO(),a};
+  if(ex){nv.t=$("edt2").value.trim();nv.c=$("edc").value;if(fx){nv.o=o;nv.r=rt;nv.cur=r.cur}}
+  Object.assign(r,nv);
+  (ex?PEND:PENDI).forEach(x=>{if(x.id===r.id)Object.assign(x,nv)});
+  EQ.push({k:"u",kind,r:Object.assign({id:r.id},nv)});lsSet("eq",EQ);
+  closeEdit();render();totals();persist();toast("Entry updated");
+}
+function edDelete(){
+  if(!edCur)return;
+  if(!edSure){edSure=true;const b=$("eddel");b.textContent="Tap again to delete";b.classList.add("sure");return}
+  const {kind,r}=edCur,L=kind==="e"?S.exp:S.inc,P=kind==="e"?PEND:PENDI;
+  const i=L.findIndex(x=>x.id===r.id);if(i>=0)L.splice(i,1);
+  for(let j=P.length-1;j>=0;j--)if(P[j].id===r.id)P.splice(j,1);
+  EQ.push({k:"d",kind,id:r.id});lsSet("eq",EQ);lsSet("pend",PEND);lsSet("pendi",PENDI);
+  closeEdit();render();totals();persist();toast("Entry deleted");
+}
+$("edx").onclick=closeEdit;$("edsave").onclick=edSave;$("eddel").onclick=edDelete;
+$("ed").addEventListener("click",ev=>{if(ev.target===$("ed"))closeEdit()});
+$("edo").addEventListener("input",edConv);$("edr").addEventListener("input",edConv);
 
 /* ---------- CSV export ---------- */
 const safe=x=>/^[=+@\-]/.test(String(x))?"'"+x:x;
@@ -1069,12 +1150,12 @@ $("cgo").onclick=async()=>{
 
 function logout(e){
   if(e&&e.preventDefault)e.preventDefault();
-  const un=(PEND||[]).length+(PENDI||[]).length;
+  const un=(PEND||[]).length+(PENDI||[]).length+(EQ||[]).length;
   const msg=un?("You have "+un+" entry(s) not saved to the database yet. Logging out will lose them. Log out anyway?"):"Log out of Income Tracker on this phone? Your data stays safe in your database.";
   if(!confirm(msg))return;
   if(SB&&SB.at){fetch(SB.url+"/auth/v1/logout",{method:"POST",headers:{apikey:SB.key,Authorization:"Bearer "+SB.at}}).catch(()=>{})}
-  ["sb","cache","pend","pendi","pin","pinlen"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
-  PEND=[];PENDI=[];SB=null;ready=false;S=blank();
+  ["sb","cache","pend","pendi","eq","pin","pinlen"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
+  PEND=[];PENDI=[];EQ=[];SB=null;ready=false;S=blank();
   $("lock").hidden=true;$("appwrap").hidden=true;showSetup("You are logged out. Enter your password to log in again.");
 }
 $("lk").onclick=()=>{if(!lsGet("pin")){toast("Set a PIN in Settings first, then tap Lock");return}lock()};
@@ -1085,7 +1166,7 @@ function start(){
   const c=lsGet("cache");if(c){S=Object.assign(blank(),c);S.inc=c.inc||[];setClosed(null);render();totals()}
   load();
 }
-PEND=lsGet("pend")||[];PENDI=lsGet("pendi")||[];SB=lsGet("sb");
+PEND=lsGet("pend")||[];PENDI=lsGet("pendi")||[];EQ=lsGet("eq")||[];SB=lsGet("sb");
 pinUI();lock();setTab("");
 if(SB&&SB.url&&SB.rt)start();else showSetup("");
 window.hideSplash&&window.hideSplash();
