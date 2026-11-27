@@ -207,14 +207,14 @@ input[type=checkbox]{width:20px;height:20px;min-height:0;padding:0}
 .mini{margin-top:12px;padding:12px;border-radius:16px;background:var(--chip);border:1px solid var(--line);cursor:pointer;-webkit-tap-highlight-color:transparent}
 .mini:active{transform:scale(.99)}
 .mh{display:flex;justify-content:space-between;color:var(--mute);font-size:12px;font-weight:600;margin-bottom:8px}
-.mb{display:flex;align-items:center;gap:14px}
+.mb{display:flex;align-items:center;gap:10px}
 .mb svg{flex:none}
 #minil{flex:1;min-width:0}
-.ml{display:flex;align-items:center;gap:8px;font-size:13px;padding:2px 0}
+.ml{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:2px 0}
 .ml i{width:10px;height:10px;border-radius:3px;flex:none}
 .ml span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ml b{font-variant-numeric:tabular-nums;font-weight:700}
-.ml em{font-style:normal;color:var(--mute);width:34px;text-align:right}
+.ml em{font-style:normal;color:var(--mute);width:30px;text-align:right}
 .qa{display:grid;grid-template-columns:1fr 1.75fr 1fr;gap:8px}.qa button{padding:11px 4px;font-size:14px;font-weight:700;border-radius:14px;min-height:46px;white-space:nowrap}
 #c4{scroll-margin-top:76px;padding:12px}#c4 .f{margin-top:12px}.qa button.on{box-shadow:0 0 0 3px rgba(255,255,255,.7),0 6px 16px rgba(5,70,66,.35)}
 /* splash + motion */
@@ -297,7 +297,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   </div>
   <div class="mini" id="mini" style="display:none" role="button" tabindex="0" aria-label="Spending by category this month, tap for details">
     <div class="mh"><span id="minit">By category</span><span>details ›</span></div>
-    <div class="mb"><svg id="donut" viewBox="0 0 42 42" width="96" height="96" aria-hidden="true"></svg><div id="minil"></div></div>
+    <div class="mb"><svg id="donut" viewBox="0 0 42 42" width="88" height="88" aria-hidden="true"></svg><div id="minil"></div></div>
   </div>
 </div>
 
@@ -391,8 +391,8 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
-const CATS=["Bills","Food","Shop","Hotel","Transport","Health","Other"];
-const COLORS=["#0b8f86","#e0a526","#6a7be0","#e0645a","#58b368","#a35fc7","#7a8b99"];
+const CATS=["Bills","Food","Shop","Hotel","Transport","Fuel","Health","Withdrawal","Transfer","Other"];
+const COLORS=["#0b8f86","#e0a526","#6a7be0","#e0645a","#58b368","#a35fc7","#7a8b99","#d96aa0","#8d6e4f","#3ab0d9"];
 const KEYS=["c1","c2","c3","c6","c5"];
 function blank(){return {bank:0,income:0,budget:0,end:24,rlkr:0.05,rusd:15.42,exp:[],inc:[],up:[],closed:{}}}
 let S=blank(),PEND=[],PENDI=[],ready=false,saving=false,unsaved=false,timer=null,lastLoad=0,curMon=null,q="",tab="",hiddenAt=0,tt=null;
@@ -677,8 +677,8 @@ function renderMini(){
   const L=$("minil");L.textContent="";
   ct.forEach((c,k)=>{
     const d=mk("div",{className:"ml"}),dot=mk("i");dot.style.background=COLORS[k%COLORS.length];
-    const pc=c[1]/tot*100;
-    d.append(dot,mk("span",{textContent:c[0]+" ("+c[2]+")"}),mk("b",{textContent:fmt(c[1])}),mk("em",{textContent:pc<1?"<1%":Math.round(pc)+"%"}));L.append(d);
+    const pc=c[1]/tot*100;d.title=c[2]+(c[2]===1?" entry":" entries");
+    d.append(dot,mk("span",{textContent:c[0]}),mk("b",{textContent:fmt(c[1])}),mk("em",{textContent:pc<1?"<1%":Math.round(pc)+"%"}));L.append(d);
   });
 }
 $("mini").addEventListener("click",()=>showDetail("msp"));
