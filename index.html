@@ -660,8 +660,9 @@ function renderMini(){
   const tm=tmk(),rows=S.exp.filter(r=>mkey(r.d)===tm),tot=sum(rows),box=$("mini");
   if(!rows.length||!(tot>0)){box.style.display="none";return}
   box.style.display="";
-  let ct=catTotals(rows).filter(c=>c[1]>0);
-  if(ct.length>5){const rest=ct.slice(4).reduce((a,c)=>a+c[1],0);ct=ct.slice(0,4).concat([["Others",rest]])}
+  const cnt={};rows.forEach(r=>{const c=catOf(r);cnt[c]=(cnt[c]||0)+1});
+  let ct=catTotals(rows).filter(c=>c[1]>0).map(c=>[c[0],c[1],cnt[c[0]]||0]);
+  if(ct.length>COLORS.length){const rest=ct.slice(COLORS.length-1);ct=ct.slice(0,COLORS.length-1).concat([["More ("+rest.length+")",rest.reduce((a,c)=>a+c[1],0),rest.reduce((a,c)=>a+c[2],0)]])}
   $("minit").textContent="By category · "+(eday()>=29?mlabel(tm):rlabel(tm));
   const svg=$("donut"),NS="http://www.w3.org/2000/svg";svg.textContent="";
   const mkc=(a)=>{const c=document.createElementNS(NS,"circle");Object.keys(a).forEach(k=>c.setAttribute(k,a[k]));return c};
@@ -672,11 +673,12 @@ function renderMini(){
     svg.append(mkc({cx:21,cy:21,r:15.9155,fill:"none",stroke:COLORS[k%COLORS.length],"stroke-width":6,"stroke-dasharray":Math.max(pct-0.6,0.1)+" "+(100-Math.max(pct-0.6,0.1)),"stroke-dashoffset":25-acc,transform:"rotate(0 21 21)"}));
     acc+=pct;
   });
-  const t=document.createElementNS(NS,"text");t.setAttribute("x",21);t.setAttribute("y",22.6);t.setAttribute("text-anchor","middle");t.setAttribute("font-size",tot>=100000?4.4:5.2);t.setAttribute("font-weight",800);t.setAttribute("fill","currentColor");t.textContent=fmt(tot);svg.append(t);
+  const t=document.createElementNS(NS,"text");t.setAttribute("x",21);t.setAttribute("y",22.6);t.setAttribute("text-anchor","middle");t.setAttribute("font-size",Math.min(5.2,34/fmt(tot).length));t.setAttribute("font-weight",800);t.setAttribute("fill","currentColor");t.textContent=fmt(tot);svg.append(t);
   const L=$("minil");L.textContent="";
   ct.forEach((c,k)=>{
     const d=mk("div",{className:"ml"}),dot=mk("i");dot.style.background=COLORS[k%COLORS.length];
-    d.append(dot,mk("span",{textContent:c[0]}),mk("b",{textContent:fmt(c[1])}),mk("em",{textContent:Math.round(c[1]/tot*100)+"%"}));L.append(d);
+    const pc=c[1]/tot*100;
+    d.append(dot,mk("span",{textContent:c[0]+" ("+c[2]+")"}),mk("b",{textContent:fmt(c[1])}),mk("em",{textContent:pc<1?"<1%":Math.round(pc)+"%"}));L.append(d);
   });
 }
 $("mini").addEventListener("click",()=>showDetail("msp"));
