@@ -291,6 +291,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 #fpcalc .gap{display:block;margin-top:2px}
 #fpcalc .up{color:var(--bad)}#fpcalc .dn{color:var(--accent)}
 
+.cvs{grid-template-columns:1fr 1fr!important;margin:8px 0 2px}
 .cvr{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;margin-top:8px}
 .cvr b{font-size:14px;color:var(--accent);letter-spacing:.04em}
 #cvn{margin:8px 2px 0;line-height:1.5}
@@ -468,6 +469,11 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   </div>
   <div class="card" id="cvcard">
     <h2>Currency converter</h2>
+    <div class="seg cvs"><button id="cvlive" class="on">Live rates</button><button id="cvman">Manual rates</button></div>
+    <div class="f" id="cvmw" style="display:none">
+      <div><label for="cvxl">1 USD = ? LKR</label><input id="cvxl" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 300"></div>
+      <div><label for="cvxm">1 USD = ? MVR</label><input id="cvxm" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 15.42"></div>
+    </div>
     <div class="cvr"><b>USD</b><input id="cvu" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="US dollars"></div>
     <div class="cvr"><b>LKR</b><input id="cvl" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Sri Lankan rupees"></div>
     <div class="cvr"><b>MVR</b><input id="cvm" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Maldivian rufiyaa"></div>
@@ -1125,7 +1131,7 @@ async function fxLoad(force){
     else throw new Error("bad reply");
   }catch(e){if(FX)FX.fail=1;else FX={f:0,u:0,r:null,fail:1}}
   finally{clearTimeout(t)}
-  if(FX&&FX.r&&!$("cvu").value&&!$("cvl").value&&!$("cvm").value)$("cvu").value="1";
+  if(cvRates()&&!$("cvu").value&&!$("cvl").value&&!$("cvm").value)$("cvu").value="1";
   fxRender();fpCalc();cvCalc();
 }
 function fxCross(a,b){const r=FX&&FX.r;return r&&r[a]>0&&r[b]>0?r[b]/r[a]:0}   // 1 a = ? b
@@ -1160,15 +1166,35 @@ function fpCalc(){
 }
 /* currency converter (USD / LKR / MVR) */
 const CVK={cvu:"USD",cvl:"LKR",cvm:"MVR"};let cvLast="cvu";
+let CVM=lsGet("cvman")||{on:false,l:"",m:""};
+function cvRates(){
+  if(CVM.on){const l=parseFloat(CVM.l),m=parseFloat(CVM.m);return l>0&&m>0?{USD:1,LKR:l,MVR:m}:null}
+  return FX&&FX.r?FX.r:null;
+}
+function cvMode(){
+  $("cvlive").classList.toggle("on",!CVM.on);$("cvman").classList.toggle("on",!!CVM.on);
+  $("cvmw").style.display=CVM.on?"":"none";
+  $("cvxl").value=CVM.l;$("cvxm").value=CVM.m;cvCalc();
+}
 function cvCalc(){
   const n=$("cvn");if(!n)return;
-  const r=FX&&FX.r;
-  if(!r){n.textContent=FX&&FX.fail?"Live rates are not available right now (no connection).":"Loading live rates…";return}
+  const r=cvRates();
+  if(!r){n.textContent=CVM.on?"Enter both manual rates above (1 USD in LKR and in MVR).":FX&&FX.fail?"Live rates are not available right now (no connection).":"Loading live rates…";return}
   const src=$(cvLast),v=parseFloat(src.value);
   if(isFinite(v)){const usd=v/r[CVK[cvLast]];Object.keys(CVK).forEach(id=>{if(id!==cvLast)$(id).value=(usd*r[CVK[id]]).toFixed(2)})}
   else Object.keys(CVK).forEach(id=>{if(id!==cvLast)$(id).value=""});
-  n.textContent="1 USD = "+fmt(r.LKR)+" LKR = "+fmt(r.MVR)+" MVR · 1 LKR = "+(r.MVR/r.LKR).toFixed(4)+" MVR · 1 MVR = "+(r.LKR/r.MVR).toFixed(2)+" LKR";
+  n.textContent=(CVM.on?"Your manual rates: ":"")+"1 USD = "+fmt(r.LKR)+" LKR = "+fmt(r.MVR)+" MVR · 1 LKR = "+(r.MVR/r.LKR).toFixed(4)+" MVR · 1 MVR = "+(r.LKR/r.MVR).toFixed(2)+" LKR";
 }
+function cvSet(on){
+  CVM.on=on;
+  if(on&&!(parseFloat(CVM.l)>0&&parseFloat(CVM.m)>0)){          // start from the live rates (or sensible defaults) so you only change what differs
+    const r=FX&&FX.r;CVM.l=String(r&&r.LKR?+(+r.LKR).toFixed(4):300);CVM.m=String(r&&r.MVR?+(+r.MVR).toFixed(4):15.42);
+  }
+  lsSet("cvman",CVM);cvMode();
+}
+$("cvlive").onclick=()=>cvSet(false);$("cvman").onclick=()=>cvSet(true);
+$("cvxl").addEventListener("input",()=>{CVM.l=$("cvxl").value;lsSet("cvman",CVM);cvCalc()});
+$("cvxm").addEventListener("input",()=>{CVM.m=$("cvxm").value;lsSet("cvman",CVM);cvCalc()});
 Object.keys(CVK).forEach(id=>$(id).addEventListener("input",()=>{cvLast=id;cvCalc()}));
 $("cvuse").onclick=()=>{
   const l=num($("cvl").value),m=num($("cvm").value);
@@ -1212,7 +1238,7 @@ function fpDel(r){
 }
 function fpOpen(){
   $("fpv").hidden=false;document.body.style.overflow="hidden";$("fpv").scrollTop=0;
-  if(!fpEditId)$("fpd").value=todayISO();fpRender();fpCalc();fxRender();cvCalc();fxLoad(false);fpSync();
+  if(!fpEditId)$("fpd").value=todayISO();fpRender();fpCalc();fxRender();cvMode();fxLoad(false);fpSync();
   try{history.replaceState(null,"","#foreign")}catch(e){}
 }
 function fpClose(){
