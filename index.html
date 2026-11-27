@@ -245,7 +245,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 #fpv::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(rgba(246,245,241,.45),rgba(246,245,241,.45)),url(bg.jpg) center/cover no-repeat}
 @media (prefers-color-scheme:dark){#fpv::before{background:linear-gradient(rgba(6,18,19,.82),rgba(6,18,19,.82)),url(bg.jpg) center/cover no-repeat}}
 #fpv .wrap{max-width:720px;margin:0 auto;padding:0 12px calc(40px + env(safe-area-inset-bottom,0px))}
-.fph{position:sticky;top:0;z-index:3;margin:0 -12px 12px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;background:linear-gradient(135deg,#0b8f86,#064a49);color:#fff;border-radius:0 0 22px 22px;box-shadow:0 8px 24px rgba(6,60,60,.28)}
+.fph{position:relative;margin:0 -12px 12px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;background:linear-gradient(135deg,#0b8f86,#064a49);color:#fff;border-radius:0 0 22px 22px;box-shadow:0 8px 24px rgba(6,60,60,.28)}
 .fph .tr{display:flex;align-items:center;gap:6px}
 .fph h1{flex:1;margin:0;font-size:17px;color:#fff}
 .fph button.ghost{color:#fff;background:rgba(255,255,255,.16);border-radius:12px;min-height:38px;padding:4px 12px;box-shadow:none}
@@ -283,6 +283,13 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 #edconv{grid-column:1/-1;font-size:13px;color:var(--mute)}
 .h.tap{cursor:pointer;-webkit-tap-highlight-color:transparent}.h.tap:active{background:var(--chip)}
 .h.tap .ha::after{content:" ✎";font-weight:400;font-size:12px;opacity:.45}
+
+.fpx{margin-top:8px;font-size:12px;line-height:1.45;opacity:.95}
+.fpx b{font-variant-numeric:tabular-nums}
+.fpx small{display:block;opacity:.8;font-size:11px}
+.fpr.tap{cursor:pointer;-webkit-tap-highlight-color:transparent}.fpr.tap:active{background:var(--chip)}
+#fpcalc .gap{display:block;margin-top:2px}
+#fpcalc .up{color:var(--bad)}#fpcalc .dn{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -436,14 +443,15 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
     <div class="tr"><button class="ghost" id="fpb" aria-label="Back to dashboard">‹ Back</button><h1>🌍 Foreign Purchases</h1><button class="ghost" id="fprf" aria-label="Refresh">↻</button></div>
     <div class="tot1"><small id="fpl">Total deducted from bank</small><b id="fpT"><i>MVR</i>0.00</b></div>
     <div class="fpc" id="fpchips"></div>
+    <div class="fpx" id="fprate"></div>
     <div class="fpm"><select id="fpmon" aria-label="Month"></select><span id="fpn"></span></div>
   </div>
   <div id="fpst"></div>
   <div class="card">
-    <h2>New foreign purchase</h2>
+    <h2 id="fph2">New foreign purchase</h2>
     <div class="f">
       <div><label for="fpd">Date</label><input id="fpd" type="date"></div>
-      <div><label for="fpc">Currency</label><input id="fpc" list="fpcl" value="USD" autocapitalize="characters" autocomplete="off"><datalist id="fpcl"><option>USD</option><option>LKR</option><option>EUR</option><option>GBP</option><option>SGD</option><option>INR</option><option>AED</option></datalist></div>
+      <div><label for="fpc">Currency</label><input id="fpc" list="fpcl" value="LKR" autocapitalize="characters" autocomplete="off"><datalist id="fpcl"><option>LKR</option><option>USD</option><option>EUR</option><option>GBP</option><option>SGD</option><option>INR</option><option>AED</option></datalist></div>
       <input id="fpname" class="w" placeholder="What / where (e.g. Amazon, Hotel)" autocomplete="off">
       <div><label for="fpo">Amount in foreign currency</label><input id="fpo" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
       <div><label for="fpbm">Bank deducted (MVR)</label><input id="fpbm" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
@@ -451,9 +459,11 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
       <input id="fpbk" class="w" placeholder="Bank / card used (optional)" autocomplete="off">
       <input id="fpt" class="w" placeholder="Note (optional)" autocomplete="off">
       <button id="fpadd" class="w">Add foreign purchase</button>
+      <button id="fpcancel" class="w ghost" style="display:none">Cancel editing</button>
     </div>
   </div>
   <div class="card"><h2>Purchases</h2><div id="fpl2"></div><p class="mute" id="fpe" style="display:none">No foreign purchases yet.</p></div>
+  <p class="mute sm" style="text-align:center">Exchange rates: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">ExchangeRate-API</a> (mid-market, refreshed once a day by the provider). Your bank's own rate is what counts for your entries.</p>
   <p class="mute sm" style="text-align:center">This page is separate: nothing here changes your balance, expenses or income.</p>
 </div>
 </div>
@@ -1022,7 +1032,7 @@ document.addEventListener("visibilitychange",()=>{
 
 
 /* ---------- Foreign Purchases page (own table, not linked to any other entry) ---------- */
-let FP=lsGet("fp")||[],FPQ=lsGet("fpq")||[],fpMon="",fpFlushing=false;
+let FP=lsGet("fp")||[],FPQ=lsGet("fpq")||[],fpMon="",fpFlushing=false,fpEditId=null;
 function fpMonths(list){const m={};list.forEach(r=>{const k=String(r.d||"").slice(0,7);if(/^\d{4}-\d{2}$/.test(k))m[k]=1});return Object.keys(m).sort().reverse()}
 function fpMonthLabel(k){const[y,m]=k.split("-");return["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1]+" "+y}
 function fpShown(list,mon){return list.filter(r=>!mon||String(r.d||"").slice(0,7)===mon)}
@@ -1055,8 +1065,9 @@ function fpRender(){
   list.map((r,i)=>({r,i})).sort((p,q)=>String(q.r.d||"").localeCompare(String(p.r.d||""))||q.i-p.i).forEach(({r})=>{
     const c=String(r.cur||"USD").toUpperCase(),rt=fpRate(num(r.o),num(r.b)),row=mk("div",{className:"fpr"});
     row.append(mk("div",{className:"n",textContent:r.n||"(no name)"}));
-    row.append(mk("div",{className:"o",textContent:c+" "+fmt(num(r.o))}));
-    const x=mk("button",{className:"ghost x",textContent:"✕"});x.setAttribute("aria-label","Delete "+(r.n||"purchase"));x.onclick=()=>fpDel(r);row.append(x);
+    row.append(mk("div",{className:"o",textContent:c+" "+fmt(num(r.o))+(fpEditId===r.id?"  ✎":"")}));
+    const x=mk("button",{className:"ghost x",textContent:"✕"});x.setAttribute("aria-label","Delete "+(r.n||"purchase"));x.onclick=ev=>{ev.stopPropagation();fpDel(r)};row.append(x);
+    row.classList.add("tap");row.tabIndex=0;row.setAttribute("role","button");row.setAttribute("aria-label","Edit "+(r.n||"purchase"));row.onclick=()=>fpEdit(r);row.onkeydown=ev=>{if(ev.key==="Enter")fpEdit(r)};
     row.append(mk("div",{className:"m",textContent:[dlabel(r.d),r.bk,rt?"rate "+rt.toFixed(4):"",r.t].filter(Boolean).join(" · ")}));
     row.append(mk("div",{className:"b",textContent:"−MVR "+fmt(num(r.b))}));
     L.append(row);
@@ -1090,28 +1101,85 @@ async function fpSync(){
   }catch(e){fpFail(e)}
 }
 function fpPush(op){FPQ.push(op);lsSet("fpq",FPQ);lsSet("fp",FP);fpRender();fpStat("Saving…");fpFlush().then(()=>{if(!FPQ.length)fpStat("Saved ✓")}).catch(fpFail)}
+/* live exchange rates (ExchangeRate-API open endpoint, USD base) */
+let FX=lsGet("fx")||null;
+async function fxLoad(force){
+  if(!force&&FX&&Date.now()-FX.f<10*60000){fxRender();return}
+  const ac=new AbortController(),t=setTimeout(()=>ac.abort(),12000);
+  try{
+    const res=await fetch("https://open.er-api.com/v6/latest/USD",{signal:ac.signal});
+    const j=await res.json();
+    if(j&&j.result==="success"&&j.rates&&j.rates.MVR){FX={f:Date.now(),u:(j.time_last_update_unix||0)*1000,r:j.rates,fail:0};lsSet("fx",FX)}
+    else throw new Error("bad reply");
+  }catch(e){if(FX)FX.fail=1;else FX={f:0,u:0,r:null,fail:1}}
+  finally{clearTimeout(t)}
+  fxRender();fpCalc();
+}
+function fxCross(a,b){const r=FX&&FX.r;return r&&r[a]>0&&r[b]>0?r[b]/r[a]:0}   // 1 a = ? b
+function fxRender(){
+  const e=$("fprate");if(!e)return;e.textContent="";
+  if(!FX||!FX.r){e.append(document.createTextNode(FX&&FX.fail?"Live rates unavailable (no connection)":"Loading live rates…"));return}
+  const c=($("fpc").value||"LKR").trim().toUpperCase()||"LKR",l1=mk("div"),l2=mk("small");
+  const pairs=["LKR","MVR"];if(c!=="USD"&&pairs.indexOf(c)<0&&FX.r[c])pairs.splice(1,0,c);
+  l1.append(document.createTextNode("1 USD = "));
+  pairs.forEach((k,i)=>{if(i)l1.append(document.createTextNode("  ·  "));l1.append(mk("b",{textContent:fxFmt(FX.r[k])}),document.createTextNode(" "+k))});
+  e.append(l1);
+  const m=c!=="MVR"?fxCross(c,"MVR"):0,parts=[];
+  if(m)parts.push("1 "+c+" = "+m.toFixed(c==="LKR"?4:4)+" MVR");
+  const when=FX.u?new Date(FX.u):null;
+  parts.push((FX.fail?"offline – last rates ":"rates ")+(when?"from "+when.toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):"loaded"));
+  l2.textContent=parts.join("  ·  ");e.append(l2);
+}
+function fxFmt(x){return x>=100?x.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):x.toFixed(4).replace(/0+$/,"").replace(/\.$/,"")}
+setInterval(()=>{if(!$("fpv").hidden&&document.visibilityState==="visible")fxLoad(false)},10*60000);
+
 function fpCalc(){
-  const o=num($("fpo").value),b=num($("fpbm").value),r=fpRate(o,b),c=($("fpc").value||"USD").trim().toUpperCase()||"USD",e=$("fpcalc");
+  const o=num($("fpo").value),b=num($("fpbm").value),r=fpRate(o,b),c=($("fpc").value||"LKR").trim().toUpperCase()||"LKR",e=$("fpcalc");
   e.textContent="";
-  if(r){e.append(document.createTextNode("Effective rate: 1 "+c+" = "),mk("b",{textContent:r.toFixed(4)}),document.createTextNode(" MVR"))}
-  else e.textContent="Enter both amounts to see the rate.";
+  if(r){
+    e.append(document.createTextNode("Effective rate: 1 "+c+" = "),mk("b",{textContent:r.toFixed(4)}),document.createTextNode(" MVR"));
+    const m=c==="MVR"?0:fxCross(c,"MVR");
+    if(m){const d=(r/m-1)*100,g=mk("span",{className:"gap"});
+      g.append(document.createTextNode("Market "+m.toFixed(4)+" · bank charged "),mk("b",{className:d>0.05?"up":"dn",textContent:(d>0?"+":"")+d.toFixed(2)+"%"}),document.createTextNode(d>0.05?" more":d<-0.05?" less":" (about the same)"));
+      e.append(g)}
+  }else e.textContent="Enter both amounts to see the rate.";
+  fxRender();
+}
+function fpFormReset(){
+  fpEditId=null;
+  ["fpname","fpo","fpbm","fpt","fpbk"].forEach(i=>$(i).value="");$("fpd").value=todayISO();$("fpc").value="LKR";
+  $("fph2").textContent="New foreign purchase";$("fpadd").textContent="Add foreign purchase";$("fpcancel").style.display="none";
+  fpCalc();fxRender();
+}
+function fpEdit(r){
+  fpEditId=r.id;
+  $("fpd").value=isoOf(r.d)||todayISO();$("fpc").value=String(r.cur||"LKR").toUpperCase();$("fpname").value=r.n||"";
+  $("fpo").value=r.o;$("fpbm").value=r.b;$("fpbk").value=r.bk||"";$("fpt").value=r.t||"";
+  $("fph2").textContent="Edit foreign purchase";$("fpadd").textContent="Save changes";$("fpcancel").style.display="";
+  fpCalc();fxRender();fpRender();
+  $("fpv").scrollTo({top:0,behavior:"smooth"});
+  setTimeout(()=>{try{$("fpname").focus({preventScroll:true})}catch(e){}},350);
 }
 function fpAdd(){
   const o=num($("fpo").value),b=num($("fpbm").value);
   if(o<=0){toast("Enter the amount in the foreign currency");$("fpo").focus();return}
   if(b<=0){toast("Enter the MVR amount the bank deducted");$("fpbm").focus();return}
-  const r={id:uid(),d:$("fpd").value||todayISO(),n:$("fpname").value.trim(),cur:($("fpc").value||"USD").trim().toUpperCase()||"USD",o:Math.round(o*100)/100,b:Math.round(b*100)/100,bk:$("fpbk").value.trim(),t:$("fpt").value.trim()};
-  FP.push(r);fpPush({k:"s",r});
-  ["fpname","fpo","fpbm","fpt"].forEach(i=>$(i).value="");$("fpd").value=todayISO();fpCalc();
-  toast("Foreign purchase added");
+  const v={d:$("fpd").value||todayISO(),n:$("fpname").value.trim(),cur:($("fpc").value||"LKR").trim().toUpperCase()||"LKR",o:Math.round(o*100)/100,b:Math.round(b*100)/100,bk:$("fpbk").value.trim(),t:$("fpt").value.trim()};
+  const cur=fpEditId?FP.find(x=>x.id===fpEditId):null;
+  let r,msg;
+  if(cur){Object.assign(cur,v);r=cur;msg="Foreign purchase updated"}
+  else{r=Object.assign({id:uid()},v);FP.push(r);msg="Foreign purchase added"}
+  fpPush({k:"s",r:Object.assign({},r)});
+  fpFormReset();toast(msg);
 }
 function fpDel(r){
+  if(fpEditId===r.id)fpFormReset();
   FP=FP.filter(x=>x.id!==r.id);fpPush({k:"d",id:r.id});
   toast("Deleted "+(r.n||"purchase"),()=>{FP.push(r);fpPush({k:"s",r})});
 }
 function fpOpen(){
   $("fpv").hidden=false;document.body.style.overflow="hidden";$("fpv").scrollTop=0;
-  $("fpd").value=todayISO();fpRender();fpCalc();fpSync();
+  if(!fpEditId)$("fpd").value=todayISO();fpRender();fpCalc();fxRender();fxLoad(false);fpSync();
   try{history.replaceState(null,"","#foreign")}catch(e){}
 }
 function fpClose(){
@@ -1119,10 +1187,10 @@ function fpClose(){
   try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
 }
 $("fpo").addEventListener("input",fpCalc);$("fpbm").addEventListener("input",fpCalc);$("fpc").addEventListener("input",fpCalc);
-$("fpadd").onclick=fpAdd;
+$("fpadd").onclick=fpAdd;$("fpcancel").onclick=fpFormReset;
 $("fpo").onkeydown=$("fpbm").onkeydown=ev=>{if(ev.key==="Enter")fpAdd()};
 $("fpmon").onchange=()=>{fpMon=$("fpmon").value;fpRender()};
-$("fpopen").onclick=fpOpen;$("fpb").onclick=fpClose;$("fprf").onclick=fpSync;$("fpst").onclick=()=>{if($("fpst").className==="bad")fpSync()};
+$("fpopen").onclick=fpOpen;$("fpb").onclick=fpClose;$("fprf").onclick=()=>{fxLoad(true);fpSync()};$("fpst").onclick=()=>{if($("fpst").className==="bad")fpSync()};
 $("fpv").addEventListener("keydown",ev=>{if(ev.key==="Escape")fpClose()});
 
 
