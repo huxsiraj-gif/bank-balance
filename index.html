@@ -2055,6 +2055,22 @@ function thOpen(id){
 function thClose(){$("thub").hidden=true;document.body.style.overflow=""}
 $("thb").onclick=thClose;$("thub").addEventListener("keydown",ev=>{if(ev.key==="Escape"&&$("fpv").hidden&&$("cav").hidden&&$("trv").hidden)thClose()});
 dtRender();
+/* ---------- phone Back button / swipe: close the open page or sheet instead of leaving the app ---------- */
+const NAVO=[["mv",()=>mvClose()],["ed",()=>closeEdit()],["tsh",()=>tpClose()],["dt",()=>closeDetail()],["cav",()=>caClose()],["fpv",()=>fpClose()],["trv",()=>trClose()],["thub",()=>thClose()]];
+let NAVD=0,NAVSKIP=0;
+function navOpenCount(){return NAVO.filter(o=>$(o[0])&&!$(o[0]).hidden).length}
+function navSync(){
+  const n=navOpenCount();
+  while(NAVD<n){try{history.pushState({ov:NAVD+1},"",location.href)}catch(e){}NAVD++}
+  if(NAVD>n){const k=NAVD-n;NAVD=n;NAVSKIP++;try{history.go(-k)}catch(e){NAVSKIP--}}
+}
+window.addEventListener("popstate",()=>{
+  if(NAVSKIP>0){NAVSKIP--;return}
+  if(NAVD>0)NAVD--;
+  for(const o of NAVO){const e=$(o[0]);if(e&&!e.hidden){o[1]();break}}
+  navSync();
+});
+{const mo=new MutationObserver(navSync);NAVO.forEach(o=>{const e=$(o[0]);if(e)mo.observe(e,{attributes:true,attributeFilter:["hidden"]})})}
 /* ---------- login screen ---------- */
 function showSetup(msg){try{thClose()}catch(e){}
   $("appwrap").hidden=true;$("setup").hidden=false;
