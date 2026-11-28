@@ -359,7 +359,8 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 #mov .wrap{max-width:720px;margin:0 auto;padding:0 12px calc(40px + env(safe-area-inset-bottom,0px))}
 #mov .trh{background:linear-gradient(135deg,#7a2fd0,#3a166f)}
 .mfm{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:8px 0;background:var(--card)}
-.mfm{display:flex;gap:10px}.mfm .mb{flex:1;min-width:0}.mpo{position:relative;flex:0 0 62px;height:92px;border-radius:8px;overflow:hidden;background:linear-gradient(160deg,#7a2fd0,#3a166f);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}.mpo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.mfm{display:flex;gap:10px}.mfm .mb{flex:1;min-width:0}.mpo{position:relative;flex:0 0 62px;height:92px;border-radius:8px;overflow:hidden;background:linear-gradient(160deg,#7a2fd0,#3a166f);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}.mpl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;text-decoration:none;background:rgba(0,0,0,.28)}
+.mpo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .mfm h3{margin:0 0 2px;font-size:15px}.mfm .mm{font-size:12px;opacity:.75}
 .mfm .mt{margin-top:6px;font-size:13px;font-variant-numeric:tabular-nums}.mfm .mt b{display:inline-block;min-width:78px}
 .mbd{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;background:#2f9e5f;color:#fff;vertical-align:middle}
@@ -2129,7 +2130,9 @@ let MOALL=false;
 function moPoster(m){
   const w=mk("div",{className:"mpo"}),im=mk("img",{alt:m.n,loading:"lazy",referrerPolicy:"no-referrer",src:"https://fdfs.lk/images/posters/"+m.s+".webp"});
   w.append(mk("span",{textContent:m.n.replace(/[^A-Za-z0-9 ]/g,"").split(" ").filter(x=>x.length>2).slice(0,2).map(x=>x[0]).join("").toUpperCase()||"🎬"}),im);
-  im.onerror=()=>im.remove();return w;
+  im.onerror=()=>im.remove();
+  const a=mk("a",{href:"https://www.youtube.com/results?search_query="+encodeURIComponent(m.n+" official trailer"),target:"_blank",rel:"noopener noreferrer",className:"mpl",title:"Watch the trailer on YouTube",textContent:"▶"});
+  a.setAttribute("aria-label","Watch the trailer of "+m.n+" on YouTube");w.append(a);return w;
 }
 function moRender(){
   const t=scopeTrip(),N=$("monote");N.textContent="";
