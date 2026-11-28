@@ -1193,8 +1193,12 @@ function fxRender(){
   l1.append(document.createTextNode("1 USD = "));
   pairs.forEach((k,i)=>{if(i)l1.append(document.createTextNode("  ·  "));l1.append(mk("b",{textContent:fxFmt(FX.r[k])}),document.createTextNode(" "+k))});
   e.append(l1);
-  const m=c!=="MVR"?fxCross(c,"MVR"):0,parts=[];
-  if(m)parts.push("1 "+c+" = "+m.toFixed(c==="LKR"?4:4)+" MVR");
+  const m=c!=="MVR"?fxCross(c,"MVR"):0,back=c!=="MVR"?fxCross("MVR",c):0,parts=[];
+  if(m){
+    const l15=mk("div");
+    l15.append(document.createTextNode("1 MVR = "),mk("b",{textContent:fxFmt(back)}),document.createTextNode(" "+c+"  ·  1 "+c+" = "+m.toFixed(4)+" MVR"));
+    e.append(l15);
+  }
   const when=FX.u?new Date(FX.u):null;
   parts.push((FX.fail?"offline – last rates ":"rates ")+(when?"from "+when.toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):"loaded"));
   l2.textContent=parts.join("  ·  ");e.append(l2);
