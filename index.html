@@ -427,6 +427,8 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 .cbar .bt i{display:block;height:100%;border-radius:99px}.cbar .bv{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
 .cbar .bp{display:block;font-size:11px;font-weight:500;color:var(--mute)}
 .seg.ca3.two{grid-template-columns:1fr 1fr!important}
+.pinb{opacity:.55;font-size:16px}.pinb.on{opacity:1;background:rgba(255,255,255,.4)!important}
+#dtrips .pin{grid-template-columns:1fr auto}
 </style>
 </head>
 <body>
@@ -581,7 +583,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <!-- Card Transactions: separate page, not linked to any other entry -->
 <div id="thub" hidden role="dialog" aria-modal="true" aria-label="Trip">
 <div class="wrap">
-  <div class="thh"><div class="tr"><button class="ghost" id="thb" aria-label="Back to dashboard">‹ Back</button><h1 id="tht">Trip</h1><button class="ghost" id="thpin" aria-label="Pin to dashboard">📌</button></div>
+  <div class="thh"><div class="tr"><button class="ghost" id="thb" aria-label="Back to dashboard">‹ Back</button><h1 id="tht">Trip</h1><span></span></div>
     <small id="thd"></small><b id="thT"></b><em id="thi"></em></div>
   <div class="pages thp"><button id="fpopen" class="pg">💳 Card Transactions</button><button id="caopen" class="pg">💵 Daily Expenses</button><button id="tropen" class="pg wide">🧳 Trip Summary</button></div>
   <div class="card" id="cvcard">
@@ -602,7 +604,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div id="fpv" hidden role="dialog" aria-modal="true" aria-label="Card transactions">
 <div class="wrap">
   <div class="fph">
-    <div class="tr"><button class="ghost" id="fpb" aria-label="Back to dashboard">‹ Back</button><h1>💳 Card Transactions</h1><button class="ghost" id="fprf" aria-label="Refresh">↻</button></div>
+    <div class="tr"><button class="ghost" id="fpb" aria-label="Back to dashboard">‹ Back</button><h1>💳 Card Transactions</h1><button class="ghost pinb" id="fppin" aria-label="Pin to dashboard">📌</button><button class="ghost" id="fprf" aria-label="Refresh">↻</button></div>
     <div class="tot1"><small id="fpl">Total deducted from bank</small><b id="fpT"><i>MVR</i>0.00</b></div>
     <div class="fpc" id="fpchips"></div>
     <div class="fpx" id="fprate"></div>
@@ -639,7 +641,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div id="cav" hidden role="dialog" aria-modal="true" aria-label="Daily expenses">
 <div class="wrap">
   <div class="cah">
-    <div class="tr"><button class="ghost" id="cab" aria-label="Back to dashboard">‹ Back</button><h1>💵 Daily Expenses</h1><button class="ghost" id="carf" aria-label="Refresh">↻</button></div>
+    <div class="tr"><button class="ghost" id="cab" aria-label="Back to dashboard">‹ Back</button><h1>💵 Daily Expenses</h1><button class="ghost pinb" id="capin" aria-label="Pin to dashboard">📌</button><button class="ghost" id="carf" aria-label="Refresh">↻</button></div>
     <select id="catrip" aria-label="Trip" style="max-width:100%;margin-bottom:6px"></select>
     <small>Cash balance (cash in − cash spent)</small>
     <div class="cab"><div><span>USD</span><b id="cbu">0.00</b><em id="cbui"></em></div><div><span>LKR</span><b id="cbl">0.00</b><em id="cbli"></em></div></div>
@@ -673,7 +675,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div id="trv" hidden role="dialog" aria-modal="true" aria-label="Trip summary">
 <div class="wrap">
   <div class="trh">
-    <div class="tr"><button class="ghost" id="trb2" aria-label="Back to dashboard">‹ Back</button><h1 id="trh1">🧳 Trip Summary</h1><button class="ghost" id="trrf" aria-label="Refresh">↻</button></div>
+    <div class="tr"><button class="ghost" id="trb2" aria-label="Back to dashboard">‹ Back</button><h1 id="trh1">🧳 Trip Summary</h1><button class="ghost pinb" id="trpin" aria-label="Pin to dashboard">📌</button><button class="ghost" id="trrf" aria-label="Refresh">↻</button></div>
     <small id="trl">Total trip spending · MVR</small>
     <b id="trT">MVR 0.00</b>
     <div class="trc" id="trchips"></div>
@@ -1823,7 +1825,7 @@ function tpRender(){
   const act=activeTrip();
   TRIPS.slice().sort((a,b)=>String(b.d1||"").localeCompare(String(a.d1||""))).forEach(t=>{
     const row=mk("div",{className:"tpr"});row.tabIndex=0;row.setAttribute("role","button");
-    row.append(mk("div",{className:"n",textContent:"🧳 "+tripName(t)+(isPinned(t)?"  📌":"")}));
+    row.append(mk("div",{className:"n",textContent:"🧳 "+tripName(t)}));
     const a=mk("div",{className:"act"}),ob=mk("button",{className:"ghost use",textContent:"Open ›"});ob.onclick=ev=>{ev.stopPropagation();thOpen(t.id)};a.append(ob);
     row.append(a,mk("div",{className:"m",textContent:dlabel(t.d1)+" → "+dlabel(t.d2)+" · cash: "+tpCashText(t)}));
     row.onclick=()=>tpOpen(t);row.onkeydown=ev=>{if(ev.key==="Enter")tpOpen(t)};
@@ -2038,8 +2040,14 @@ $("tropen").onclick=trOpen;$("trb2").onclick=trClose;$("trrf").onclick=trSync;
 $("trv").addEventListener("keydown",ev=>{if(ev.key==="Escape")trClose()});
 
 /* ---------- dashboard Trips list + trip hub ---------- */
-function isPinned(t){return PINS[t.id]!==0}
-function thPinToggle(){const t=scopeTrip();if(!t)return;PINS[t.id]=isPinned(t)?0:1;lsSet("tpins",PINS);dtRender();tpRender();thRender();toast(isPinned(t)?"Pinned to the dashboard":"Unpinned – open it from Settings → Trips")}
+function isPinned(t){return true}
+/* ---------- pin a page (Card Transactions / Daily Expenses / Trip Summary) as a dashboard shortcut ---------- */
+const PGN={fp:["💳 Card Transactions",()=>fpOpen()],ca:["💵 Daily Expenses",()=>caOpen()],tr:["🧳 Trip Summary",()=>trOpen()]};
+let PGP=lsGet("pgpins")||[];
+function pgKey(p){const t=scopeTrip();return p+"|"+(t?t.id:"all")}
+function pgPinned(p){return PGP.indexOf(pgKey(p))>=0}
+function pgToggle(p){const k=pgKey(p),i=PGP.indexOf(k);if(i>=0)PGP.splice(i,1);else PGP.push(k);lsSet("pgpins",PGP);dtRender();toast(i>=0?"Removed from the dashboard":"Pinned – it shows on the dashboard under Trips")}
+["fp","ca","tr"].forEach(p=>$(p+"pin").onclick=()=>pgToggle(p));
 function dtRender(){
   const D=$("dtrips");if(!D)return;D.textContent="";
   D.append(mk("div",{className:"dtt",textContent:"Trips"}));
@@ -2051,14 +2059,20 @@ function dtRender(){
     b.onclick=()=>thOpen(t.id);D.append(b);
   });
   if(!TRIPS.length)D.append(mk("p",{className:"mute sm",textContent:"No trips yet. Create one in Settings → Trips."}));
-  else if(!TRIPS.some(isPinned))D.append(mk("p",{className:"mute sm",textContent:"No pinned trips. Open a trip from Settings → Trips and tap 📌 to pin it here."}));
   if(TRIPS.length>1){const ab=mk("button",{className:"pg",textContent:"All trips together"});ab.style.textAlign="center";ab.onclick=()=>thOpen("all");D.append(ab)}
+  PGP=PGP.filter(k=>{const id=k.split("|")[1];return id==="all"||TRIPS.some(t=>t.id===id)});
+  if(PGP.length)D.append(mk("div",{className:"dtt",textContent:"Pinned",style:"margin-top:6px"}));
+  PGP.forEach(k=>{
+    const [p,id]=k.split("|"),t=id==="all"?null:TRIPS.find(x=>x.id===id),b=mk("button",{className:"pg pin"});
+    b.append(mk("b",{textContent:PGN[p][0]}),mk("i",{textContent:"Open ›"}),mk("span",{textContent:t?tripName(t):"All trips"}));
+    b.onclick=()=>{thOpen(id);PGN[p][1]()};D.append(b);
+  });
+  ["fp","ca","tr"].forEach(p=>{const e=$(p+"pin");if(e){const on=pgPinned(p);e.classList.toggle("on",on);e.title=on?"Pinned – tap to unpin":"Pin to dashboard"}});
 }
 function thRender(){
   const t=scopeTrip();if(!t&&$("thub").hidden)return;
   const today=todayISO();
   $("tht").textContent=t?"🧳 "+tripName(t):"🧳 All trips";
-  {const pb=$("thpin");pb.style.display=t?"":"none";pb.classList.toggle("on",!!t&&isPinned(t));pb.title=t&&isPinned(t)?"Pinned – tap to unpin":"Pin to dashboard"}
   if(t){const X=trCalc(t);
     $("thd").textContent=dlabel(t.d1)+" → "+dlabel(t.d2)+" · "+(t.d2<today?"finished":t.d1>today?"starts in "+trDiff(today,t.d1)+" days":"day "+(trDiff(t.d1,today)+1)+" of "+(trDiff(t.d1,t.d2)+1));
     $("thT").textContent="MVR "+fmt(Math.round(X.total*100)/100);$("thi").textContent="Card "+fmt(Math.round(X.card*100)/100)+" · Cash "+fmt(Math.round(X.cash*100)/100)+" · opening cash: "+tpCashText(t)}
@@ -2069,7 +2083,7 @@ function thOpen(id){
   $("thub").hidden=false;document.body.style.overflow="hidden";thRender();tpRender();try{fxLoad(false)}catch(e){}cvMode();
 }
 function thClose(){$("thub").hidden=true;document.body.style.overflow=""}
-$("thb").onclick=thClose;$("thpin").onclick=thPinToggle;$("thub").addEventListener("keydown",ev=>{if(ev.key==="Escape"&&$("fpv").hidden&&$("cav").hidden&&$("trv").hidden)thClose()});
+$("thb").onclick=thClose;$("thub").addEventListener("keydown",ev=>{if(ev.key==="Escape"&&$("fpv").hidden&&$("cav").hidden&&$("trv").hidden)thClose()});
 dtRender();
 /* ---------- phone Back button / swipe: close the open page or sheet instead of leaving the app ---------- */
 const NAVO=[["mv",()=>mvClose()],["ed",()=>closeEdit()],["tsh",()=>tpClose()],["dt",()=>closeDetail()],["cav",()=>caClose()],["fpv",()=>fpClose()],["trv",()=>trClose()],["thub",()=>thClose()]];
@@ -2115,7 +2129,7 @@ function logout(e){
   const msg=un?("You have "+un+" entry(s) not saved to the database yet. Logging out will lose them. Log out anyway?"):"Log out of Income Tracker on this phone? Your data stays safe in your database.";
   if(!confirm(msg))return;
   if(SB&&SB.at){fetch(SB.url+"/auth/v1/logout",{method:"POST",headers:{apikey:SB.key,Authorization:"Bearer "+SB.at}}).catch(()=>{})}
-  ["sb","cache","pend","pendi","eq","pin","pinlen","ca","caq","carate","trip","trips","tpq","tripact","tpins","caclosed","fp","fpq"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
+  ["sb","cache","pend","pendi","eq","pin","pinlen","ca","caq","carate","trip","trips","tpq","tripact","tpins","pgpins","caclosed","fp","fpq"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
   PEND=[];PENDI=[];EQ=[];SB=null;ready=false;S=blank();
   $("lock").hidden=true;$("appwrap").hidden=true;showSetup("You are logged out. Enter your password to log in again.");
 }
