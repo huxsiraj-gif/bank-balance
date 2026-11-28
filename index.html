@@ -393,6 +393,18 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 .tpr .chip2{font-size:12px;font-weight:700;color:var(--accent);background:var(--chip);border-radius:999px;padding:4px 10px}
 .tpr button.use{min-height:32px;padding:4px 10px;font-size:12.5px}
 #trinfo .n{font-weight:700;font-size:15px}
+
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.dgrid div{background:var(--chip);border-radius:12px;padding:10px}
+.dgrid span{display:block;font-size:12px;color:var(--mute)}.dgrid b{display:block;font-size:16px;margin-top:2px;word-break:break-word}.dgrid i{display:block;font-style:normal;font-size:11.5px;color:var(--mute);margin-top:1px}
+#trsplit .sp{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--chip);margin:4px 0}
+#trsplit .sp i{display:block;height:100%}.dh{font-size:12px;font-weight:700;color:var(--mute);margin:12px 0 4px;text-transform:uppercase;letter-spacing:.04em}
+.dchart{display:flex;align-items:flex-end;gap:3px;height:90px;overflow-x:auto;padding-bottom:2px}
+.dchart div{flex:1 0 14px;max-width:34px;display:flex;flex-direction:column;justify-content:flex-end;height:100%;font-size:9px;text-align:center;color:var(--mute)}
+.dchart div u{min-height:0!important;display:block;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px;text-decoration:none}
+.dchart div s{display:block;background:#f0a04b;text-decoration:none}
+.tar{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-bottom:1px dashed var(--line);cursor:pointer}.tar:last-child{border-bottom:0}
+.tar .n{font-weight:700}.tar .v{font-weight:700;text-align:right}.tar .m{grid-column:1/3;font-size:12px;color:var(--mute)}
 </style>
 </head>
 <body>
@@ -638,6 +650,8 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
     <div id="trbud"></div>
   </div>
   <div id="trst"></div>
+  <div class="card" id="trdash"><h2>Trip dashboard</h2><div class="dgrid" id="trdg"></div><div id="trsplit"></div><div class="dh">Spending by day</div><div class="dchart" id="trchart"></div></div>
+  <div class="card" id="trall" style="display:none"><h2>All trips</h2><div id="tralll"></div></div>
   <div class="card" id="trinfo" style="display:none"><h2>Trip</h2><div id="trinfob"></div><p class="mute sm">Change the country, dates or cash in Settings → Trips.</p></div>
   <div class="card" id="trset">
     <h2>Trip settings</h2>
@@ -1817,30 +1831,31 @@ tpRender();
 /* ---------- Trip Summary (card + cash spending abroad, in MVR) ---------- */
 let TRIP=lsGet("trip")||{s:"",e:"",b:""};
 function trDiff(a,b){const p=x=>{const[y,m,d]=x.split("-").map(Number);return Date.UTC(y,m-1,d)};return Math.round((p(b)-p(a))/86400000)}
-function trRange(){
-  const at=activeTrip();
+function trRange(at0){
+  const at=at0===undefined?activeTrip():at0;
   return at?{s:at.d1||"",e:at.d2||"",b:tpBudgetMvr(at),at}:{s:TRIP.s,e:TRIP.e,b:num(TRIP.b),at:null};
 }
-function trCalc(){
-  const R=trRange(),today=todayISO(),inR=d=>{d=isoOf(d)||"";return d&&(!R.s||d>=R.s)&&(!R.e||d<=R.e)};
+function trCalc(at0){
+  const R=trRange(at0),today=todayISO(),inR=d=>{d=isoOf(d)||"";return d&&(!R.s||d>=R.s)&&(!R.e||d<=R.e)};
   const V=caValue(CA),days={},src={};let card=0,cash=0,nCard=0,nCash=0,pend=0,nPend=0;
-  const cardCur={},cashCur={};
+  const cardCur={},cashCur={};let big=null,ex={usd:0,lkr:0,n:0};const bigC=(n,v)=>{if(!big||v>big.v)big={n:n||"(no name)",v:v}};
   const day=d=>days[d]||(days[d]={card:0,cash:0});
   FP.forEach(r=>{
     if(!inR(r.d))return;const d=isoOf(r.d),c=String(r.cur||"LKR").toUpperCase();
-    if(num(r.b)>0){card+=num(r.b);nCard++;day(d).card+=num(r.b);cardCur[c]=(cardCur[c]||0)+num(r.o)}
+    if(num(r.b)>0){bigC(r.n,num(r.b));card+=num(r.b);nCard++;day(d).card+=num(r.b);cardCur[c]=(cardCur[c]||0)+num(r.o)}
     else if(num(r.o)>0){const m=c==="MVR"?1:fxCross(c,"MVR");if(m)pend+=num(r.o)*m;nPend++}
   });
   CA.forEach(r=>{
+    if(r.k==="ex"&&inR(r.d)){ex.usd+=num(r.a);ex.lkr+=num(r.ta);ex.n++}
     if(r.k!=="out"||!inR(r.d))return;const d=isoOf(r.d),c=String(r.cur||"LKR").toUpperCase(),v=V.sp[r.id]||0;
-    cash+=v;nCash++;day(d).cash+=v;cashCur[c]=(cashCur[c]||0)+num(r.a);
+    bigC(r.n,v);cash+=v;nCash++;day(d).cash+=v;cashCur[c]=(cashCur[c]||0)+num(r.a);
     const k=r.n?r.n.trim():"(no name)";const y=src[k]||(src[k]={v:0,n:0});y.v+=v;y.n++;
   });
   FP.forEach(r=>{if(!inR(r.d)||!(num(r.b)>0))return;const k=r.n?r.n.trim():"(no name)",y=src[k]||(src[k]={v:0,n:0});y.v+=num(r.b);y.n++});
   const total=Math.round((card+cash)*100)/100,dates=Object.keys(days).sort();
   const start=R.s||dates[0]||today,end=R.e&&R.e<today?R.e:today;
   const nDays=start>today?1:Math.max(1,trDiff(start,end<start?start:end)+1);
-  return {R,card,cash,total,nCard,nCash,pend,nPend,cardCur,cashCur,days,dates,start,end,nDays,src};
+  return {big,ex,R,card,cash,total,nCard,nCash,pend,nPend,cardCur,cashCur,days,dates,start,end,nDays,src};
 }
 function trRender(){
   if(!$("trv"))return;
@@ -1880,6 +1895,34 @@ function trRender(){
       const bar=mk("div",{className:"bar"}),fill=mk("i",{className:left<0?"over":""});fill.style.width=pc.toFixed(1)+"%";bar.append(fill);bd.append(bar);
       bd.append(mk("span",{textContent:Math.round(T.total/bg*100)+"% used"}));
     }
+  }
+  {
+    const dg=$("trdg");dg.textContent="";
+    const box2=(a,b,c)=>{const d=mk("div");d.append(mk("span",{textContent:a}),mk("b",{textContent:b}),mk("i",{textContent:c||""}));dg.append(d)};
+    const dd=T.dates.map(d=>[d,T.days[d].card+T.days[d].cash]).sort((a,b)=>b[1]-a[1])[0];
+    const tx=T.nCard+T.nCash;
+    box2("Total spent","MVR "+fmt(T.total),tx+(tx===1?" transaction":" transactions"));
+    box2("Average per day","MVR "+fmt(r2(per)),T.nDays+(T.nDays===1?" day":" days"));
+    box2("Busiest day",dd?"MVR "+fmt(r2(dd[1])):"–",dd?dlabel(dd[0]):"");
+    box2("Biggest spend",T.big?"MVR "+fmt(r2(T.big.v)):"–",T.big?T.big.n:"");
+    if(at){const bg=R.b;box2("Cash left from budget",bg>0?"MVR "+fmt(r2(bg-T.cash)):"–",bg>0?"of MVR "+fmt(r2(bg))+" taken":"no opening cash")}
+    box2("Money exchanged",T.ex.n?"USD "+fmt(r2(T.ex.usd)):"–",T.ex.n?"→ LKR "+fmt(r2(T.ex.lkr))+" · avg "+fmt(r2(T.ex.lkr/T.ex.usd))+" per USD":"no exchanges");
+    const sp=$("trsplit");sp.textContent="";
+    if(T.total>0){const cp=T.card/T.total*100,b=mk("div",{className:"sp"}),a1=mk("i"),a2=mk("i");a1.style.cssText="width:"+cp.toFixed(1)+"%;background:#4c7bd9";a2.style.cssText="width:"+(100-cp).toFixed(1)+"%;background:#f0a04b";b.append(a1,a2);
+      sp.append(b,mk("span",{className:"mute sm",textContent:"Card "+Math.round(cp)+"% · Cash "+Math.round(100-cp)+"%"}))}
+    const ch=$("trchart");ch.textContent="";const mx=Math.max(1,...T.dates.map(d=>T.days[d].card+T.days[d].cash));
+    T.dates.forEach(d=>{const x=T.days[d],c=mk("div",{title:dlabel(d)+": MVR "+fmt(r2(x.card+x.cash))}),h=(x.card+x.cash)/mx*72;
+      const u=mk("u"),w=mk("s");u.style.height=(x.card/mx*72)+"px";u.style.background="#4c7bd9";w.style.height=(x.cash/mx*72)+"px";c.append(w,u,document.createTextNode(d.slice(8)));ch.append(c)});
+    if(!T.dates.length)ch.append(mk("span",{className:"mute sm",textContent:"No spending yet."}));
+    $("trdash").querySelector(".dh").style.display=T.dates.length?"":"none";
+  }
+  {
+    const al=$("tralll");al.textContent="";$("trall").style.display=TRIPS.length>1?"":"none";
+    TRIPS.slice().sort((a,b)=>String(b.d1).localeCompare(String(a.d1))).forEach(t=>{
+      const X=trCalc(t),row=mk("div",{className:"tar"});
+      row.append(mk("div",{className:"n",textContent:"🧳 "+(t.c||"Trip")+(at&&at.id===t.id?" ✓":"")}),mk("div",{className:"v",textContent:"MVR "+fmt(r2(X.total))}),
+        mk("div",{className:"m",textContent:dlabel(t.d1)+" → "+dlabel(t.d2)+" · card "+fmt(r2(X.card))+" · cash "+fmt(r2(X.cash))+" · "+(t.d2<today?"finished":t.d1>today?"upcoming":"in progress")}));
+      row.onclick=()=>{try{localStorage.setItem("tripact",t.id)}catch(e){}tpRender();trRender();$("trv").scrollTo&&$("trv").scrollTo(0,0)};al.append(row)});
   }
   $("trinfo").style.display=at?"":"none";$("trset").style.display=at?"none":"";
   if(at){const ib=$("trinfob");ib.textContent="";ib.append(mk("div",{className:"n",textContent:at.c||"Trip"}),mk("div",{className:"mute sm",textContent:dlabel(at.d1)+" → "+dlabel(at.d2)+" · opening cash: "+tpCashText(at)}));}
