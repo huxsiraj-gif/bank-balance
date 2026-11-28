@@ -240,7 +240,7 @@ input[type=checkbox]{width:20px;height:20px;min-height:0;padding:0}
 button{transition:transform .12s ease}button:active{transform:scale(.96)}
 @media (prefers-reduced-motion:reduce){#splash *,#splash::before,.card{animation:none!important}#splash{transition:none}}
 
-/* ---- Foreign Purchases page ---- */
+/* ---- Card Transactions page ---- */
 #fpv{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
 #fpv::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(rgba(246,245,241,.45),rgba(246,245,241,.45)),url(bg.jpg) center/cover no-repeat}
 @media (prefers-color-scheme:dark){#fpv::before{background:linear-gradient(rgba(6,18,19,.82),rgba(6,18,19,.82)),url(bg.jpg) center/cover no-repeat}}
@@ -571,12 +571,12 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 </div>
 </div>
 
-<!-- Foreign Purchases: separate page, not linked to any other entry -->
+<!-- Card Transactions: separate page, not linked to any other entry -->
 <div id="thub" hidden role="dialog" aria-modal="true" aria-label="Trip">
 <div class="wrap">
   <div class="thh"><div class="tr"><button class="ghost" id="thb" aria-label="Back to dashboard">‹ Back</button><h1 id="tht">Trip</h1><span></span></div>
     <small id="thd"></small><b id="thT"></b><em id="thi"></em></div>
-  <div class="pages thp"><button id="fpopen" class="pg">🌍 Foreign Purchases</button><button id="caopen" class="pg">💵 Cash in Hand</button><button id="tropen" class="pg wide">🧳 Trip Summary</button></div>
+  <div class="pages thp"><button id="fpopen" class="pg">💳 Card Transactions</button><button id="caopen" class="pg">💵 Cash in Hand</button><button id="tropen" class="pg wide">🧳 Trip Summary</button></div>
   <div class="card" id="cvcard">
     <h2>Currency converter</h2>
     <div class="seg cvs"><button id="cvlive" class="on">Live rates</button><button id="cvman">Manual rates</button></div>
@@ -588,14 +588,14 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
     <div class="cvr"><b>LKR</b><input id="cvl" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Sri Lankan rupees"></div>
     <div class="cvr"><b>MVR</b><input id="cvm" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Maldivian rufiyaa"></div>
     <div class="mute sm" id="cvn"></div>
-    <button id="cvuse" class="ghost" style="width:100%;margin-top:4px">Use LKR + MVR in a new foreign purchase →</button>
+    <button id="cvuse" class="ghost" style="width:100%;margin-top:4px">Use LKR + MVR in a new card transaction →</button>
   </div>
   <p class="mute sm" style="text-align:center">Everything in these three pages shows only this trip.</p>
 </div></div>
-<div id="fpv" hidden role="dialog" aria-modal="true" aria-label="Foreign purchases">
+<div id="fpv" hidden role="dialog" aria-modal="true" aria-label="Card transactions">
 <div class="wrap">
   <div class="fph">
-    <div class="tr"><button class="ghost" id="fpb" aria-label="Back to dashboard">‹ Back</button><h1>🌍 Foreign Purchases</h1><button class="ghost" id="fprf" aria-label="Refresh">↻</button></div>
+    <div class="tr"><button class="ghost" id="fpb" aria-label="Back to dashboard">‹ Back</button><h1>💳 Card Transactions</h1><button class="ghost" id="fprf" aria-label="Refresh">↻</button></div>
     <div class="tot1"><small id="fpl">Total deducted from bank</small><b id="fpT"><i>MVR</i>0.00</b></div>
     <div class="fpc" id="fpchips"></div>
     <div class="fpx" id="fprate"></div>
@@ -604,7 +604,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   </div>
   <div id="fpst"></div>
   <div class="card">
-    <h2 id="fph2">New foreign purchase</h2>
+    <h2 id="fph2">New card transaction</h2>
     <div class="f">
       <div><label for="fpd">Date</label><input id="fpd" type="date"></div>
       <div><label for="fpc">Currency</label><input id="fpc" list="fpcl" value="LKR" autocapitalize="characters" autocomplete="off"><datalist id="fpcl"><option>LKR</option><option>USD</option><option>EUR</option><option>GBP</option><option>SGD</option><option>INR</option><option>AED</option></datalist></div>
@@ -614,11 +614,11 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
       <div id="fpcalc">Only the foreign amount is needed now. Add the bank deduction later when it shows in your bank.</div>
       <input id="fpbk" class="w" placeholder="Bank / card used (optional)" autocomplete="off">
       <input id="fpt" class="w" placeholder="Note (optional)" autocomplete="off">
-      <button id="fpadd" class="w">Add foreign purchase</button>
+      <button id="fpadd" class="w">Add card transaction</button>
       <button id="fpcancel" class="w ghost" style="display:none">Cancel editing</button>
     </div>
   </div>
-  <div class="card"><h2>Purchases</h2><div id="fpl2"></div><p class="mute" id="fpe" style="display:none">No foreign purchases yet.</p></div>
+  <div class="card"><h2>Transactions</h2><div id="fpl2"></div><p class="mute" id="fpe" style="display:none">No card transactions yet.</p></div>
   <p class="mute sm" style="text-align:center">Exchange rates: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">ExchangeRate-API</a> (mid-market, refreshed once a day by the provider). Your bank's own rate is what counts for your entries.</p>
   <p class="mute sm" style="text-align:center">This page is separate: nothing here changes your balance, expenses or income.</p>
 </div>
@@ -657,7 +657,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   </div>
   <div class="card"><h2>Cash entries</h2><div id="calist"></div><p class="mute" id="caempty" style="display:none">No cash entries yet. Start with "Cash in" for the cash you are holding.</p></div>
   <div class="card" id="caexc" style="display:none"><h2>Money exchanges</h2><div class="mute sm" id="caexs"></div><div id="caexl"></div></div>
-  <p class="mute sm" style="text-align:center">Use this page for cash only. Card payments go in Foreign Purchases. Nothing here changes your balance, expenses or income.</p>
+  <p class="mute sm" style="text-align:center">Use this page for cash only. Card payments go in Card Transactions. Nothing here changes your balance, expenses or income.</p>
 </div>
 </div>
 
@@ -1291,9 +1291,9 @@ document.addEventListener("visibilitychange",()=>{
 });
 
 
-/* ---------- Foreign Purchases page (own table, not linked to any other entry) ---------- */
+/* ---------- Card Transactions page (own table, not linked to any other entry) ---------- */
 let FP=lsGet("fp")||[],FPQ=lsGet("fpq")||[],fpMon="",fpFlushing=false,fpEditId=null;
-/* ---------- trip scope: Foreign Purchases and Cash in Hand show one trip (or all) ---------- */
+/* ---------- trip scope: Card Transactions and Cash in Hand show one trip (or all) ---------- */
 function tripName(t){return t?(t.c||"Trip")+" – "+dlabel(t.d1):""}
 function scopeTrip(){let v="";try{v=localStorage.getItem("scope")||""}catch(e){}if(v==="all")return null;return typeof activeTrip==="function"?activeTrip():null}
 function inTrip(t,d){d=String(d||"").slice(0,10);return !t||((!t.d1||d>=t.d1)&&(!t.d2||d<=t.d2))}
@@ -1329,7 +1329,7 @@ function fpRender(){
   const list=fpShown(FPs,fpMon),t=fpTotals(list),stp=scopeTrip();
   $("fpl").textContent=fpMon?"Deducted from bank · "+fpMonthLabel(fpMon):"Total deducted from bank · "+(stp?tripName(stp):"all time");
   const tb=$("fpT");tb.textContent="";tb.append(mk("i",{textContent:"MVR"}),document.createTextNode(fmt(t.bank)));
-  $("fpn").textContent=t.n+(t.n===1?" purchase":" purchases")+(t.wait?" · "+t.wait+" awaiting bank":"");
+  $("fpn").textContent=t.n+(t.n===1?" transaction":" transactions")+(t.wait?" · "+t.wait+" awaiting bank":"");
   const box=$("fpchips");box.textContent="";
   Object.keys(t.cur).sort().forEach(c=>{
     const x=t.cur[c],r=fpRate(x.bo,x.b),d=mk("div");
@@ -1342,8 +1342,8 @@ function fpRender(){
     const c=String(r.cur||"USD").toUpperCase(),rt=fpRate(num(r.o),num(r.b)),row=mk("div",{className:"fpr"});
     row.append(mk("div",{className:"n",textContent:r.n||"(no name)"}));
     row.append(mk("div",{className:"o",textContent:c+" "+fmt(num(r.o))+(fpEditId===r.id?"  ✎":"")}));
-    const x=mk("button",{className:"ghost x",textContent:"✕"});x.setAttribute("aria-label","Delete "+(r.n||"purchase"));x.onclick=ev=>{ev.stopPropagation();fpDel(r)};row.append(x);
-    row.classList.add("tap");row.tabIndex=0;row.setAttribute("role","button");row.setAttribute("aria-label","Edit "+(r.n||"purchase"));row.onclick=()=>fpEdit(r);row.onkeydown=ev=>{if(ev.key==="Enter")fpEdit(r)};
+    const x=mk("button",{className:"ghost x",textContent:"✕"});x.setAttribute("aria-label","Delete "+(r.n||"transaction"));x.onclick=ev=>{ev.stopPropagation();fpDel(r)};row.append(x);
+    row.classList.add("tap");row.tabIndex=0;row.setAttribute("role","button");row.setAttribute("aria-label","Edit "+(r.n||"transaction"));row.onclick=()=>fpEdit(r);row.onkeydown=ev=>{if(ev.key==="Enter")fpEdit(r)};
     row.append(mk("div",{className:"m",textContent:[dlabel(r.d),r.bk,rt?"rate "+rt.toFixed(4):"",r.t].filter(Boolean).join(" · ")}));
     row.append(mk("div",{className:"b"+(num(r.b)>0?"":" wait"),textContent:num(r.b)>0?"−MVR "+fmt(num(r.b)):"Awaiting bank"}));
     const act=mk("div",{className:"act"});
@@ -1471,11 +1471,11 @@ $("cvuse").onclick=()=>{
   $("fpv").scrollTo({top:0,behavior:"smooth"});toast("Filled in the form – add the bank details and save");
 };
 
-/* ---------- move a foreign purchase into Expenses (after approval) ---------- */
+/* ---------- move a card transaction into Expenses (after approval) ---------- */
 let mvCur=null;
 function mvOpen(r){
   if(!ready){toast("The app is still loading – try again in a moment");return}
-  if(!(num(r.b)>0)){toast("Add the bank deduction first (tap the purchase)");return}
+  if(!(num(r.b)>0)){toast("Add the bank deduction first (tap the transaction)");return}
   if(fpLinked(r)){toast("Already moved to Expenses");return}
   mvCur=r;
   const s2=$("mvs");s2.textContent="";
@@ -1485,7 +1485,7 @@ function mvOpen(r){
   line("Bank deducted:","MVR "+fmt(num(r.b)));
   line("Category:","Foreign");
   $("mvd").value=todayISO();
-  $("mvn").textContent="This adds an expense of MVR "+fmt(num(r.b))+" and lowers your balance by that amount. The purchase stays here, marked as linked.";
+  $("mvn").textContent="This adds an expense of MVR "+fmt(num(r.b))+" and lowers your balance by that amount. The transaction stays here, marked as linked.";
   $("mv").hidden=false;
 }
 function mvClose(){$("mv").hidden=true;mvCur=null}
@@ -1493,7 +1493,7 @@ function mvApprove(){
   const r=mvCur;if(!r)return;
   if(fpLinked(r)||!(num(r.b)>0)){mvClose();return}
   const o=num(r.o),b=num(r.b),cur=String(r.cur||"LKR").toUpperCase();
-  const it={n:r.n||"Foreign purchase",t:[r.bk?"Bank: "+r.bk:"",r.t].filter(Boolean).join(" · "),a:b,c:"Foreign",d:$("mvd").value||todayISO(),id:uid(),o:o,cur:cur,r:Math.round(b/o*1e8)/1e8};
+  const it={n:r.n||"Card transaction",t:[r.bk?"Bank: "+r.bk:"",r.t].filter(Boolean).join(" · "),a:b,c:"Foreign",d:$("mvd").value||todayISO(),id:uid(),o:o,cur:cur,r:Math.round(b/o*1e8)/1e8};
   S.exp.push(it);PEND.push(it);lsSet("pend",PEND);
   r.x=it.id;fpPush({k:"s",r:Object.assign({},r)});
   render();totals();persist();mvClose();toast("Moved to Expenses (Foreign)");
@@ -1504,7 +1504,7 @@ $("mv").addEventListener("click",ev=>{if(ev.target===$("mv"))mvClose()});
 function fpFormReset(){
   fpEditId=null;
   ["fpname","fpo","fpbm","fpt","fpbk"].forEach(i=>$(i).value="");$("fpd").value=todayISO();$("fpc").value="LKR";
-  $("fph2").textContent="New foreign purchase";$("fpadd").textContent="Add foreign purchase";$("fpcancel").style.display="none";
+  $("fph2").textContent="New card transaction";$("fpadd").textContent="Add card transaction";$("fpcancel").style.display="none";
   fpCalc();fxRender();fpRender();
 }
 function fpEdit(r){
@@ -1512,7 +1512,7 @@ function fpEdit(r){
   fpEditId=r.id;
   $("fpd").value=isoOf(r.d)||todayISO();$("fpc").value=String(r.cur||"LKR").toUpperCase();$("fpname").value=r.n||"";
   $("fpo").value=r.o;$("fpbm").value=r.b;$("fpbk").value=r.bk||"";$("fpt").value=r.t||"";
-  $("fph2").textContent="Edit foreign purchase";$("fpadd").textContent="Save changes";$("fpcancel").style.display="";
+  $("fph2").textContent="Edit card transaction";$("fpadd").textContent="Save changes";$("fpcancel").style.display="";
   fpCalc();fxRender();fpRender();
   $("fpv").scrollTo({top:0,behavior:"smooth"});
   setTimeout(()=>{try{$("fpname").focus({preventScroll:true})}catch(e){}},350);
@@ -1523,15 +1523,15 @@ function fpAdd(){
   const v={d:$("fpd").value||todayISO(),n:$("fpname").value.trim(),cur:($("fpc").value||"LKR").trim().toUpperCase()||"LKR",o:Math.round(o*100)/100,b:b>0?Math.round(b*100)/100:0,bk:$("fpbk").value.trim(),t:$("fpt").value.trim()};
   const cur=fpEditId?FP.find(x=>x.id===fpEditId):null;
   let r,msg;
-  if(cur){Object.assign(cur,v);r=cur;msg="Foreign purchase updated"}
-  else{r=Object.assign({id:uid()},v);FP.push(r);msg="Foreign purchase added"}
+  if(cur){Object.assign(cur,v);r=cur;msg="Card transaction updated"}
+  else{r=Object.assign({id:uid()},v);FP.push(r);msg="Card transaction added"}
   fpPush({k:"s",r:Object.assign({},r)});
   fpFormReset();toast(msg);
 }
 function fpDel(r){
   if(fpEditId===r.id)fpFormReset();
   FP=FP.filter(x=>x.id!==r.id);fpPush({k:"d",id:r.id});
-  toast("Deleted "+(r.n||"purchase"),()=>{FP.push(r);fpPush({k:"s",r})});
+  toast("Deleted "+(r.n||"transaction"),()=>{FP.push(r);fpPush({k:"s",r})});
 }
 function fpOpen(){
   $("fpv").hidden=false;document.body.style.overflow="hidden";$("fpv").scrollTop=0;
@@ -1910,7 +1910,7 @@ function trRender(){
   const per=T.total/T.nDays;
   const box=$("trchips");box.textContent="";
   const chip=(a,b,c)=>{const d=mk("div");d.append(document.createTextNode(a),mk("b",{textContent:b}),mk("i",{textContent:c}));box.append(d)};
-  chip("Card (bank deducted)","MVR "+fmt(r2(T.card)),T.nCard+(T.nCard===1?" purchase":" purchases")+(T.nPend?" · "+T.nPend+" awaiting bank"+(T.pend>0?" (≈ MVR "+fmt(r2(T.pend))+" more)":""):""));
+  chip("Card (bank deducted)","MVR "+fmt(r2(T.card)),T.nCard+(T.nCard===1?" transaction":" transactions")+(T.nPend?" · "+T.nPend+" awaiting bank"+(T.pend>0?" (≈ MVR "+fmt(r2(T.pend))+" more)":""):""));
   chip("Cash spent","MVR "+fmt(r2(T.cash)),Object.keys(T.cashCur).sort().map(c=>c+" "+fmt(T.cashCur[c])).join(" · ")||"nothing yet");
   chip("Average per day","MVR "+fmt(r2(per)),T.start>todayISO()?"trip not started yet":T.nDays+(T.nDays===1?" day":" days")+" ("+dlabel(T.start)+" – "+dlabel(T.end)+")");
   chip("Foreign card spend",Object.keys(T.cardCur).sort().map(c=>c+" "+fmt(T.cardCur[c])).join(" · ")||"–","before conversion");
