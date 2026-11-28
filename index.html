@@ -426,6 +426,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 .cbar .bn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cbar .bt{height:12px;border-radius:99px;background:var(--chip);overflow:hidden}
 .cbar .bt i{display:block;height:100%;border-radius:99px}.cbar .bv{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
 .cbar .bp{display:block;font-size:11px;font-weight:500;color:var(--mute)}
+.seg.ca3.two{grid-template-columns:1fr 1fr!important}
 </style>
 </head>
 <body>
@@ -648,7 +649,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   <div id="cast"></div>
   <div class="card">
     <h2 id="cah2">Add cash entry</h2>
-    <div class="seg ca3"><button id="cakin">＋ Cash in</button><button id="cakout" class="on">− Spent</button><button id="cakex">⇄ Exchange</button></div>
+    <div class="seg ca3 two"><button id="cakin" style="display:none">＋ Cash in</button><button id="cakout" class="on">− Spent</button><button id="cakex">⇄ Exchange</button></div>
     <div class="f" style="margin-top:8px">
       <div id="cacurw"><label for="cacur">Currency</label><select id="cacur"><option>LKR</option><option>USD</option></select></div>
       <div><label for="caamt" id="caamtl">Amount</label><input id="caamt" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
@@ -1633,8 +1634,8 @@ function caRender(){
     }else{
       row.append(mk("div",{className:"n",textContent:r.n||(r.k==="in"?"Cash in":"Cash spent")}));
       row.append(mk("div",{className:"v "+(r.k==="in"?"in":"out"),textContent:(r.k==="in"?"+":"−")+c+" "+fmt(num(r.a))+ed}));
-      row.append(caDelBtn(r));
-      row.append(mk("div",{className:"m",textContent:[dlabel(r.d),r.k==="in"?"cash in":(r.c?r.c+" · ":"")+"spent"+(V.sp[r.id]>0?" ≈ MVR "+fmt(Math.round(V.sp[r.id]*100)/100):""),r.t].filter(Boolean).join(" · ")}));
+      if(!tpLinked(r.id))row.append(caDelBtn(r));
+      row.append(mk("div",{className:"m",textContent:[dlabel(r.d),r.k==="in"?(tpLinked(r.id)?"trip cash – change it in Settings":"cash in"):(r.c?r.c+" · ":"")+"spent"+(V.sp[r.id]>0?" ≈ MVR "+fmt(Math.round(V.sp[r.id]*100)/100):""),r.t].filter(Boolean).join(" · ")}));
     }
     row.tabIndex=0;row.setAttribute("role","button");row.onclick=()=>caEdit(r);row.onkeydown=ev=>{if(ev.key==="Enter")caEdit(r)};
     L.append(row);
@@ -1688,7 +1689,7 @@ async function caSync(){
     const d=await rpc("cash_get");
     if(!Array.isArray(d))throw new Error("Unexpected reply from the database");
     if(CAQ.length)return;
-    CA=d;lsSet("ca",CA);caRender();caStat("Synced ✓");
+    CA=d;lsSet("ca",CA);CAOK=true;caRender();caStat("Synced ✓");try{tpEnsureCash()}catch(e){}
   }catch(e){caFail(e)}
 }
 function caPush(op){if(op.k==="s")scopeWarn(op.r.d);CAQ.push(op);lsSet("caq",CAQ);lsSet("ca",CA);caRender();caStat("Saving…");caFlush().then(()=>{if(!CAQ.length)caStat("Saved ✓")}).catch(caFail)}
@@ -1730,6 +1731,7 @@ function caFormReset(){
   caSetKind(caKind);caRender();
 }
 function caEdit(r){
+  if(tpLinked(r.id)){toast("This cash comes from the trip – change or remove it in Settings → Trips");return}
   caEditId=r.id;caSetKind(r.k==="ex"?"ex":r.k==="in"?"in":"out");
   $("cad").value=isoOf(r.d)||todayISO();$("canm").value=r.n||"";$("cant").value=r.t||"";$("caamt").value=r.a;$("cacat").value=r.c||"";
   if(r.k==="ex"){$("carate").value=r.r;$("carecv").value=r.ta}
@@ -1793,6 +1795,16 @@ $("cav").addEventListener("keydown",ev=>{if(ev.key==="Escape")caClose()});
 
 /* ---------- Trips (Settings): country, dates, opening cash ---------- */
 let TRIPS=lsGet("trips")||[],TPQ=lsGet("tpq")||[],tpFlushing=false,tpEdit=null,tpSure=false;
+function tpLinked(id){return TRIPS.some(t=>t.cash&&Object.keys(t.cash).some(c=>t.cash[c]&&t.cash[c].id===id))}
+let CAOK=false,TPOK=false;
+function tpEnsureCash(){                     // trip cash lives in Settings: put back any trip cash entry that went missing
+  if(!CAOK||!TPOK)return;
+  TRIPS.forEach(t=>["USD","LKR"].forEach(cur=>{
+    const c=t.cash&&t.cash[cur];if(!c||!(num(c.a)>0)||!c.id||CA.some(x=>x.id===c.id))return;
+    const r={id:c.id,d:t.d1,k:"in",cur:cur,a:num(c.a),n:"Trip cash – "+(t.c||"Trip"),t:"",to:null,ta:null,r:null,c:""};
+    CA.push(r);caPush({k:"s",r:Object.assign({},r)});
+  }));
+}
 function tpActiveId(){try{return localStorage.getItem("tripact")||""}catch(e){return ""}}
 function activeTrip(){
   if(!TRIPS.length)return null;
@@ -1833,7 +1845,7 @@ async function tripsLoad(){
     const d=await rpc("trip_get");
     if(!Array.isArray(d))return;
     if(TPQ.length)return;
-    TRIPS=d;lsSet("trips",TRIPS);tpRender();
+    TRIPS=d;lsSet("trips",TRIPS);TPOK=true;tpRender();try{tpEnsureCash()}catch(e){}
     if(typeof trRender==="function"&&!$("trv").hidden)trRender();
   }catch(e){
     const m=String(e.message||e);
