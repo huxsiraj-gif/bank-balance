@@ -306,6 +306,10 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 #mv .sum{margin:8px 0;padding:10px 12px;border-radius:14px;background:var(--chip);font-size:14px;line-height:1.6}
 #mv .sum b{font-variant-numeric:tabular-nums}
 #mv .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+
+.h{align-items:flex-start}
+.hdel{flex:0 0 auto;align-self:center;min-height:34px;min-width:36px;padding:4px 8px;font-size:15px;background:transparent;box-shadow:none;border:0;color:var(--mute);border-radius:10px}
+.hdel.sure{background:var(--bad);color:#fff;font-size:12px;font-weight:700;padding:4px 10px}
 </style>
 </head>
 <body>
@@ -401,7 +405,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   <div id="exp"></div>
   <div class="tot"><span>Spent (shown)</span><span id="hs">0.00</span></div>
   <div class="tot in"><span>Income (shown)</span><span id="hi">0.00</span></div>
-  <p class="mute">Tap any entry to edit its name, category, amount, date or note, or to delete it. <a id="sheet2" target="_blank" rel="noopener" href="#">Open database ↗</a></p>
+  <p class="mute">Tap an entry to edit it (name, category, amount, date, note). Tap 🗑 twice to delete it. <a id="sheet2" target="_blank" rel="noopener" href="#">Open database ↗</a></p>
   <button id="csv" class="ghost" style="width:100%">⬇ Download CSV</button>
 </div>
 
@@ -780,7 +784,7 @@ function renderHist(){
     meta.append(mk("em",{className:"chip"+(it.t==="i"?" in":""),textContent:it.t==="i"?"Income":catOf(r)}));
     meta.append(document.createTextNode([r.t,(r.cur?fmt(num(r.o))+" "+r.cur+" @ "+r.r:""),dlabel(r.d)].filter(Boolean).join(" · ")));
     l.append(meta);
-    d.append(l,mk("div",{className:"ha"+(it.t==="i"?" in":""),textContent:(it.t==="i"?"+":"−")+fmt(num(r.a))}));
+    d.append(l,mk("div",{className:"ha"+(it.t==="i"?" in":""),textContent:(it.t==="i"?"+":"−")+fmt(num(r.a))}),rowDel(it.t,r));
     d.classList.add("tap");d.tabIndex=0;d.setAttribute("role","button");d.onclick=()=>openEdit(it.t,r);d.onkeydown=ev=>{if(ev.key==="Enter")openEdit(it.t,r)};
     box.append(d);
   });
@@ -915,7 +919,7 @@ function renderForeign(){
     l.append(mk("span",{textContent:r.n||"(no name)"}));
     meta.append(mk("em",{className:"chip",textContent:catOf(r)}));
     meta.append(document.createTextNode([fmt(num(r.o))+" "+r.cur+" @ "+r.r,r.t,dlabel(r.d)].filter(Boolean).join(" · ")));
-    l.append(meta);d.append(l,mk("div",{className:"ha",textContent:"−"+fmt(num(r.a))}));
+    l.append(meta);d.append(l,mk("div",{className:"ha",textContent:"−"+fmt(num(r.a))}),rowDel("e",r));
     d.classList.add("tap");d.onclick=()=>openEdit("e",r);box.append(d);
   });
 }
@@ -977,14 +981,37 @@ function edSave(){
   EQ.push({k:"u",kind,r:Object.assign({id:r.id},nv)});lsSet("eq",EQ);
   closeEdit();render();totals();persist();toast("Entry updated");
 }
+function delEntry(kind,r){
+  const L=kind==="e"?S.exp:S.inc,P=kind==="e"?PEND:PENDI;
+  const i=L.findIndex(x=>x.id===r.id);if(i>=0)L.splice(i,1);
+  let wasP=false;for(let j=P.length-1;j>=0;j--)if(P[j].id===r.id){P.splice(j,1);wasP=true}
+  EQ.push({k:"d",kind,id:r.id});lsSet("eq",EQ);lsSet("pend",PEND);lsSet("pendi",PENDI);
+  render();totals();persist();
+  toast("Deleted "+(r.n||"entry"),()=>{
+    const k=EQ.findIndex(o=>o.k==="d"&&o.id===r.id);
+    if(k>=0&&saving){toast("Too late to undo – please add it again");return}
+    if(k>=0)EQ.splice(k,1);
+    lsSet("eq",EQ);
+    L.push(r);
+    if(wasP||k<0){P.push(r);lsSet("pend",PEND);lsSet("pendi",PENDI)}
+    render();totals();persist();toast("Restored");
+  });
+}
+function rowDel(kind,r){
+  const b=mk("button",{className:"ghost hdel",textContent:"🗑"});b.setAttribute("aria-label","Delete "+(r.n||"entry"));
+  let t=null;
+  b.onclick=ev=>{
+    ev.stopPropagation();
+    if(!r.id){toast("Run update-history.sql in Supabase once, then tap ↻");return}
+    if(!b.classList.contains("sure")){b.classList.add("sure");b.textContent="Delete?";t=setTimeout(()=>{b.classList.remove("sure");b.textContent="🗑"},3000);return}
+    clearTimeout(t);delEntry(kind,r);
+  };
+  return b;
+}
 function edDelete(){
   if(!edCur)return;
   if(!edSure){edSure=true;const b=$("eddel");b.textContent="Tap again to delete";b.classList.add("sure");return}
-  const {kind,r}=edCur,L=kind==="e"?S.exp:S.inc,P=kind==="e"?PEND:PENDI;
-  const i=L.findIndex(x=>x.id===r.id);if(i>=0)L.splice(i,1);
-  for(let j=P.length-1;j>=0;j--)if(P[j].id===r.id)P.splice(j,1);
-  EQ.push({k:"d",kind,id:r.id});lsSet("eq",EQ);lsSet("pend",PEND);lsSet("pendi",PENDI);
-  closeEdit();render();totals();persist();toast("Entry deleted");
+  const {kind,r}=edCur;closeEdit();delEntry(kind,r);
 }
 $("edx").onclick=closeEdit;$("edsave").onclick=edSave;$("eddel").onclick=edDelete;
 $("ed").addEventListener("click",ev=>{if(ev.target===$("ed"))closeEdit()});
