@@ -295,6 +295,17 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 .cvr{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;margin-top:8px}
 .cvr b{font-size:14px;color:var(--accent);letter-spacing:.04em}
 #cvn{margin:8px 2px 0;line-height:1.5}
+
+.fpr .b.wait{color:#c98a00;font-weight:600;font-size:12.5px}
+.fpr .act{grid-column:1/-1;margin-top:4px}
+.fpr .act .hint{font-size:12px;color:var(--mute)}
+.fpr .act .lk{display:inline-block;font-size:12px;font-weight:600;color:var(--accent);background:var(--chip);border-radius:999px;padding:4px 10px}
+.fpr .act button.mv{min-height:34px;padding:6px 12px;font-size:13px}
+#mv{position:fixed;inset:0;z-index:36;background:rgba(0,20,20,.55);display:flex;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#mv[hidden]{display:none}
+#mv .sum{margin:8px 0;padding:10px 12px;border-radius:14px;background:var(--chip);font-size:14px;line-height:1.6}
+#mv .sum b{font-variant-numeric:tabular-nums}
+#mv .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 </style>
 </head>
 <body>
@@ -459,8 +470,8 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
       <div><label for="fpc">Currency</label><input id="fpc" list="fpcl" value="LKR" autocapitalize="characters" autocomplete="off"><datalist id="fpcl"><option>LKR</option><option>USD</option><option>EUR</option><option>GBP</option><option>SGD</option><option>INR</option><option>AED</option></datalist></div>
       <input id="fpname" class="w" placeholder="What / where (e.g. Amazon, Hotel)" autocomplete="off">
       <div><label for="fpo">Amount in foreign currency</label><input id="fpo" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
-      <div><label for="fpbm">Bank deducted (MVR)</label><input id="fpbm" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
-      <div id="fpcalc">Enter both amounts to see the rate.</div>
+      <div><label for="fpbm">Bank deducted (MVR) – optional</label><input id="fpbm" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+      <div id="fpcalc">Only the foreign amount is needed now. Add the bank deduction later when it shows in your bank.</div>
       <input id="fpbk" class="w" placeholder="Bank / card used (optional)" autocomplete="off">
       <input id="fpt" class="w" placeholder="Note (optional)" autocomplete="off">
       <button id="fpadd" class="w">Add foreign purchase</button>
@@ -488,6 +499,12 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div id="foot"><span id="who"></span></div>
 </div>
 </main>
+<div id="mv" hidden><div class="dtbox" role="dialog" aria-modal="true" aria-labelledby="mvt"><div class="dth"><b id="mvt">Move to Expenses?</b><button class="ghost" id="mvx" aria-label="Close">✕</button></div>
+<div class="sum" id="mvs"></div>
+<label for="mvd">Expense date</label><input id="mvd" type="date">
+<p class="mute sm" id="mvn"></p>
+<div class="acts"><button class="ghost" id="mvno" style="border:1px solid var(--line)">Cancel</button><button id="mvok">Approve &amp; add</button></div>
+</div></div>
 <div id="ed" hidden><div class="dtbox" role="dialog" aria-modal="true" aria-labelledby="edt"><div class="dth"><b id="edt">Edit</b><button class="ghost" id="edx" aria-label="Close">✕</button></div>
 <div class="f">
   <div class="w"><label for="edn">Name</label><input id="edn" autocomplete="off"></div>
@@ -503,8 +520,8 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
-const CATS=["Bills","Food","Shop","Hotel","Transport","Fuel","Health","Withdrawal","Transfer","Other"];
-const COLORS=["#0b8f86","#e0a526","#6a7be0","#e0645a","#58b368","#a35fc7","#7a8b99","#d96aa0","#8d6e4f","#3ab0d9"];
+const CATS=["Bills","Food","Shop","Hotel","Transport","Fuel","Health","Withdrawal","Transfer","Foreign","Other"];
+const COLORS=["#0b8f86","#e0a526","#6a7be0","#e0645a","#58b368","#a35fc7","#7a8b99","#d96aa0","#8d6e4f","#3ab0d9","#e07b39"];
 const KEYS=["c1","c2","c3","c6","c5"];
 function blank(){return {bank:0,income:0,budget:0,end:24,rlkr:0.05,rusd:15.42,exp:[],inc:[],up:[],closed:{}}}
 let S=blank(),PEND=[],PENDI=[],EQ=[],ready=false,saving=false,unsaved=false,timer=null,lastLoad=0,curMon=null,q="",tab="",hiddenAt=0,tt=null;
@@ -1055,10 +1072,11 @@ function fpMonths(list){const m={};list.forEach(r=>{const k=String(r.d||"").slic
 function fpMonthLabel(k){const[y,m]=k.split("-");return["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1]+" "+y}
 function fpShown(list,mon){return list.filter(r=>!mon||String(r.d||"").slice(0,7)===mon)}
 function fpTotals(list){
-  const cur={};let bank=0;
-  list.forEach(r=>{const c=String(r.cur||"USD").toUpperCase(),o=num(r.o),b=num(r.b);bank+=b;const x=cur[c]||(cur[c]={o:0,b:0,n:0});x.o+=o;x.b+=b;x.n++});
-  return {bank:Math.round(bank*100)/100,cur,n:list.length};
+  const cur={};let bank=0,wait=0;
+  list.forEach(r=>{const c=String(r.cur||"LKR").toUpperCase(),o=num(r.o),b=num(r.b);bank+=b;const x=cur[c]||(cur[c]={o:0,b:0,bo:0,n:0,w:0});x.o+=o;x.b+=b;x.n++;if(b>0)x.bo+=o;else{x.w++;wait++}});
+  return {bank:Math.round(bank*100)/100,cur,n:list.length,wait};
 }
+function fpLinked(r){return !!r.x&&(!ready||S.exp.some(e=>e.id===r.x))}
 function fpRate(o,b){return o>0&&b>0?b/o:0}
 function fpStat(t,bad){const e=$("fpst");e.textContent=t;e.className=bad?"bad":""}
 function fpRender(){
@@ -1071,11 +1089,11 @@ function fpRender(){
   const list=fpShown(FP,fpMon),t=fpTotals(list);
   $("fpl").textContent=fpMon?"Deducted from bank · "+fpMonthLabel(fpMon):"Total deducted from bank · all time";
   const tb=$("fpT");tb.textContent="";tb.append(mk("i",{textContent:"MVR"}),document.createTextNode(fmt(t.bank)));
-  $("fpn").textContent=t.n+(t.n===1?" purchase":" purchases");
+  $("fpn").textContent=t.n+(t.n===1?" purchase":" purchases")+(t.wait?" · "+t.wait+" awaiting bank":"");
   const box=$("fpchips");box.textContent="";
   Object.keys(t.cur).sort().forEach(c=>{
-    const x=t.cur[c],r=fpRate(x.o,x.b),d=mk("div");
-    d.append(mk("b",{textContent:c+" "+fmt(x.o)}),mk("br"),document.createTextNode("MVR "+fmt(x.b)+(r?" · avg "+r.toFixed(4):"")));
+    const x=t.cur[c],r=fpRate(x.bo,x.b),d=mk("div");
+    d.append(mk("b",{textContent:c+" "+fmt(x.o)}),mk("br"),document.createTextNode(x.b>0?"MVR "+fmt(x.b)+(r?" · avg "+r.toFixed(4):"")+(x.w?" · "+x.w+" awaiting bank":""):"awaiting bank deduction"));
     box.append(d);
   });
   box.style.display=box.children.length?"flex":"none";
@@ -1087,7 +1105,12 @@ function fpRender(){
     const x=mk("button",{className:"ghost x",textContent:"✕"});x.setAttribute("aria-label","Delete "+(r.n||"purchase"));x.onclick=ev=>{ev.stopPropagation();fpDel(r)};row.append(x);
     row.classList.add("tap");row.tabIndex=0;row.setAttribute("role","button");row.setAttribute("aria-label","Edit "+(r.n||"purchase"));row.onclick=()=>fpEdit(r);row.onkeydown=ev=>{if(ev.key==="Enter")fpEdit(r)};
     row.append(mk("div",{className:"m",textContent:[dlabel(r.d),r.bk,rt?"rate "+rt.toFixed(4):"",r.t].filter(Boolean).join(" · ")}));
-    row.append(mk("div",{className:"b",textContent:"−MVR "+fmt(num(r.b))}));
+    row.append(mk("div",{className:"b"+(num(r.b)>0?"":" wait"),textContent:num(r.b)>0?"−MVR "+fmt(num(r.b)):"Awaiting bank"}));
+    const act=mk("div",{className:"act"});
+    if(fpLinked(r))act.append(mk("span",{className:"lk",textContent:"✓ In Expenses (Foreign)"}));
+    else if(num(r.b)>0){const mb=mk("button",{className:"mv",textContent:"Move to Expenses →"});mb.onclick=ev=>{ev.stopPropagation();mvOpen(r)};act.append(mb)}
+    else act.append(mk("span",{className:"hint",textContent:"Tap to add the bank deduction, then move it to Expenses"}));
+    row.append(act);
     L.append(row);
   });
   $("fpe").style.display=list.length?"none":"block";
@@ -1161,7 +1184,7 @@ function fpCalc(){
     if(m){const d=(r/m-1)*100,g=mk("span",{className:"gap"});
       g.append(document.createTextNode("Market "+m.toFixed(4)+" · bank charged "),mk("b",{className:d>0.05?"up":"dn",textContent:(d>0?"+":"")+d.toFixed(2)+"%"}),document.createTextNode(d>0.05?" more":d<-0.05?" less":" (about the same)"));
       e.append(g)}
-  }else e.textContent="Enter both amounts to see the rate.";
+  }else e.textContent=o>0?"Bank deduction pending – add it later when your bank takes the money.":"Only the foreign amount is needed now. Add the bank deduction later when it shows in your bank.";
   fxRender();
 }
 /* currency converter (USD / LKR / MVR) */
@@ -1204,13 +1227,44 @@ $("cvuse").onclick=()=>{
   $("fpv").scrollTo({top:0,behavior:"smooth"});toast("Filled in the form – add the bank details and save");
 };
 
+/* ---------- move a foreign purchase into Expenses (after approval) ---------- */
+let mvCur=null;
+function mvOpen(r){
+  if(!ready){toast("The app is still loading – try again in a moment");return}
+  if(!(num(r.b)>0)){toast("Add the bank deduction first (tap the purchase)");return}
+  if(fpLinked(r)){toast("Already moved to Expenses");return}
+  mvCur=r;
+  const s2=$("mvs");s2.textContent="";
+  const line=(a,b)=>{s2.append(document.createTextNode(a+" "),mk("b",{textContent:b}),mk("br"))};
+  line("Item:",r.n||"(no name)");
+  line("Foreign amount:",String(r.cur||"LKR").toUpperCase()+" "+fmt(num(r.o)));
+  line("Bank deducted:","MVR "+fmt(num(r.b)));
+  line("Category:","Foreign");
+  $("mvd").value=todayISO();
+  $("mvn").textContent="This adds an expense of MVR "+fmt(num(r.b))+" and lowers your balance by that amount. The purchase stays here, marked as linked.";
+  $("mv").hidden=false;
+}
+function mvClose(){$("mv").hidden=true;mvCur=null}
+function mvApprove(){
+  const r=mvCur;if(!r)return;
+  if(fpLinked(r)||!(num(r.b)>0)){mvClose();return}
+  const o=num(r.o),b=num(r.b),cur=String(r.cur||"LKR").toUpperCase();
+  const it={n:r.n||"Foreign purchase",t:[r.bk?"Bank: "+r.bk:"",r.t].filter(Boolean).join(" · "),a:b,c:"Foreign",d:$("mvd").value||todayISO(),id:uid(),o:o,cur:cur,r:Math.round(b/o*1e8)/1e8};
+  S.exp.push(it);PEND.push(it);lsSet("pend",PEND);
+  r.x=it.id;fpPush({k:"s",r:Object.assign({},r)});
+  render();totals();persist();mvClose();toast("Moved to Expenses (Foreign)");
+}
+$("mvx").onclick=mvClose;$("mvno").onclick=mvClose;$("mvok").onclick=mvApprove;
+$("mv").addEventListener("click",ev=>{if(ev.target===$("mv"))mvClose()});
+
 function fpFormReset(){
   fpEditId=null;
   ["fpname","fpo","fpbm","fpt","fpbk"].forEach(i=>$(i).value="");$("fpd").value=todayISO();$("fpc").value="LKR";
   $("fph2").textContent="New foreign purchase";$("fpadd").textContent="Add foreign purchase";$("fpcancel").style.display="none";
-  fpCalc();fxRender();
+  fpCalc();fxRender();fpRender();
 }
 function fpEdit(r){
+  if(fpLinked(r)){toast("Already moved to Expenses – edit it in History");return}
   fpEditId=r.id;
   $("fpd").value=isoOf(r.d)||todayISO();$("fpc").value=String(r.cur||"LKR").toUpperCase();$("fpname").value=r.n||"";
   $("fpo").value=r.o;$("fpbm").value=r.b;$("fpbk").value=r.bk||"";$("fpt").value=r.t||"";
@@ -1222,8 +1276,7 @@ function fpEdit(r){
 function fpAdd(){
   const o=num($("fpo").value),b=num($("fpbm").value);
   if(o<=0){toast("Enter the amount in the foreign currency");$("fpo").focus();return}
-  if(b<=0){toast("Enter the MVR amount the bank deducted");$("fpbm").focus();return}
-  const v={d:$("fpd").value||todayISO(),n:$("fpname").value.trim(),cur:($("fpc").value||"LKR").trim().toUpperCase()||"LKR",o:Math.round(o*100)/100,b:Math.round(b*100)/100,bk:$("fpbk").value.trim(),t:$("fpt").value.trim()};
+  const v={d:$("fpd").value||todayISO(),n:$("fpname").value.trim(),cur:($("fpc").value||"LKR").trim().toUpperCase()||"LKR",o:Math.round(o*100)/100,b:b>0?Math.round(b*100)/100:0,bk:$("fpbk").value.trim(),t:$("fpt").value.trim()};
   const cur=fpEditId?FP.find(x=>x.id===fpEditId):null;
   let r,msg;
   if(cur){Object.assign(cur,v);r=cur;msg="Foreign purchase updated"}
