@@ -429,6 +429,11 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 .seg.ca3.two{grid-template-columns:1fr 1fr!important}
 .pinb{opacity:.55;font-size:16px}.pinb.on{opacity:1;background:rgba(255,255,255,.4)!important}
 #dtrips .pin{grid-template-columns:1fr auto}
+.ptnav{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin-bottom:4px}.ptnav #ptdate{text-align:center;font-weight:700}
+.ptnav .ghost{min-height:36px;padding:4px 14px;font-size:18px;border:1px solid var(--line)}
+#ptsub{text-align:center;margin-bottom:6px}
+.ptr{display:flex;justify-content:space-between;padding:9px 6px;border-bottom:1px dashed var(--line);font-variant-numeric:tabular-nums}.ptr:last-child{border-bottom:0}
+.ptr b{font-size:16px}.ptr.next{background:var(--chip);border-radius:10px;border-bottom-color:transparent;color:var(--accent);font-weight:700}.ptr.rise{color:var(--mute);font-size:13px}
 </style>
 </head>
 <body>
@@ -586,6 +591,13 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   <div class="thh"><div class="tr"><button class="ghost" id="thb" aria-label="Back to dashboard">‹ Back</button><h1 id="tht">Trip</h1><span></span></div>
     <small id="thd"></small><b id="thT"></b><em id="thi"></em></div>
   <div class="pages thp"><button id="fpopen" class="pg">💳 Card Transactions</button><button id="caopen" class="pg">💵 Daily Expenses</button><button id="tropen" class="pg wide">🧳 Trip Summary</button></div>
+  <div class="card" id="ptcard">
+    <h2>Prayer times</h2>
+    <div class="ptnav"><button class="ghost" id="ptprev" aria-label="Previous day">‹</button><div id="ptdate"></div><button class="ghost" id="ptnext" aria-label="Next day">›</button></div>
+    <div class="mute sm" id="ptsub"></div>
+    <div id="ptlist"></div>
+    <p class="mute sm" id="ptnote"></p>
+  </div>
   <div class="card" id="cvcard">
     <h2>Currency converter</h2>
     <div class="seg cvs"><button id="cvlive" class="on">Live rates</button><button id="cvman">Manual rates</button></div>
@@ -703,6 +715,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div class="f">
   <div><label for="tpc">Country</label><input id="tpc" placeholder="e.g. Sri Lanka" autocomplete="off" list="tpcl"><datalist id="tpcl"><option>Sri Lanka</option><option>India</option><option>Thailand</option><option>Malaysia</option><option>Singapore</option><option>United Arab Emirates</option></datalist></div>
   <div><label for="tpcu">Local currency</label><select id="tpcu"></select></div>
+  <div class="w"><label for="tpcity">City (used for prayer times)</label><input id="tpcity" placeholder="e.g. Colombo" autocomplete="off"></div>
   <div><label for="tpd1">Departure date</label><input id="tpd1" type="date"></div>
   <div><label for="tpd2">Arrival date (back home)</label><input id="tpd2" type="date"></div>
   <div class="w" style="font-weight:700;margin-top:4px">Cash you take (trip cash budget)</div>
@@ -1875,7 +1888,7 @@ function tpPush(op){TPQ.push(op);lsSet("tpq",TPQ);lsSet("trips",TRIPS);tpRender(
 function tpOpen(t){
   tpEdit=t||null;tpSure=false;
   $("tpt").textContent=t?"Edit trip":"Create trip";
-  $("tpc").value=t?t.c:"";$("tpd1").value=t?t.d1||"":"";$("tpd2").value=t?t.d2||"":"";
+  $("tpc").value=t?t.c:"";$("tpcity").value=t&&t.cash&&t.cash._city||"";delete $("tpcity").dataset.u;$("tpd1").value=t?t.d1||"":"";$("tpd2").value=t?t.d2||"":"";
   const c=(t&&t.cash)||{},lc=t?tripCur(t):"LKR";tpCurSet(lc);$("tpu").value=c.USD?c.USD.a:"";$("tpl").value=c[lc]?c[lc].a:"";
   const b=$("tpdel");b.style.display=t?"":"none";b.textContent="Delete trip";b.classList.remove("sure");
   tpBud();$("tsh").hidden=false;
@@ -1893,7 +1906,8 @@ function tpSave(){
   if(!d2){toast("Enter the arrival date");$("tpd2").focus();return}
   if(d2<d1){toast("Arrival date must be after the departure date");$("tpd2").focus();return}
   const lc=$("tpcu").value,prev=tpEdit&&tpEdit.cash||{},cash={_c:lc},amts={USD:num($("tpu").value)};amts[lc]=num($("tpl").value);
-  Object.keys(prev).forEach(k=>{if(k!=="_c"&&k!=="USD"&&k!==lc&&prev[k]&&prev[k].id){CA=CA.filter(x=>x.id!==prev[k].id);caPush({k:"d",id:prev[k].id})}});
+  cash._city=$("tpcity").value.trim();
+  Object.keys(prev).forEach(k=>{if(k!=="_c"&&k!=="_city"&&k!=="USD"&&k!==lc&&prev[k]&&prev[k].id){CA=CA.filter(x=>x.id!==prev[k].id);caPush({k:"d",id:prev[k].id})}});
   ["USD",lc].forEach(cur=>{
     const a=Math.round(amts[cur]*100)/100,pid=prev[cur]&&prev[cur].id,ex=pid?CA.find(x=>x.id===pid):null;
     if(a>0){
@@ -1918,7 +1932,8 @@ $("tpnew").onclick=()=>tpOpen(null);$("tpx").onclick=tpClose;$("tpsave").onclick
 $("tsh").addEventListener("click",ev=>{if(ev.target===$("tsh"))tpClose()});
 ["tpu","tpl"].forEach(i=>$(i).addEventListener("input",tpBud));
 $("tpcu").addEventListener("change",()=>{$("tpll").textContent=$("tpcu").value;tpBud()});
-$("tpc").addEventListener("input",()=>{const c=curFor($("tpc").value);if(c&&!tpEdit){tpCurSet(c);tpBud()}});
+$("tpc").addEventListener("input",()=>{const c=curFor($("tpc").value);if(c&&!tpEdit){tpCurSet(c);tpBud()}const cp=CAPS[$("tpc").value.trim().toLowerCase()];if(cp&&!tpEdit&&!$("tpcity").dataset.u)$("tpcity").value=cp});
+$("tpcity").addEventListener("input",()=>{$("tpcity").dataset.u=1});
 tpRender();
 
 /* ---------- Trip Summary (card + cash spending abroad, in MVR) ---------- */
@@ -2091,10 +2106,62 @@ function dtRender(){
   });
   ["fp","ca","tr"].forEach(p=>{const e=$(p+"pin");if(e){const on=pgPinned(p);e.classList.toggle("on",on);e.title=on?"Pinned – tap to unpin":"Pin to dashboard"}});
 }
+/* ---------- Prayer times for the trip's city (AlAdhan) ---------- */
+const CAPS={"sri lanka":"Colombo","india":"New Delhi","thailand":"Bangkok","malaysia":"Kuala Lumpur","singapore":"Singapore","united arab emirates":"Dubai","uae":"Dubai","dubai":"Dubai","indonesia":"Jakarta","vietnam":"Hanoi","japan":"Tokyo","china":"Beijing","turkey":"Istanbul","nepal":"Kathmandu","bangladesh":"Dhaka","pakistan":"Islamabad","united kingdom":"London","uk":"London","england":"London","australia":"Sydney","philippines":"Manila","south korea":"Seoul","korea":"Seoul","saudi arabia":"Makkah","qatar":"Doha","egypt":"Cairo","germany":"Berlin","france":"Paris","italy":"Rome","spain":"Madrid","netherlands":"Amsterdam","greece":"Athens","switzerland":"Zurich","canada":"Toronto","new zealand":"Auckland","oman":"Muscat","kuwait":"Kuwait City","bahrain":"Manama","jordan":"Amman","sweden":"Stockholm","norway":"Oslo","denmark":"Copenhagen","hong kong":"Hong Kong","cambodia":"Phnom Penh","myanmar":"Yangon","south africa":"Cape Town","kenya":"Nairobi","mauritius":"Port Louis","seychelles":"Victoria"};
+const PMETH={"sri lanka":1,"india":1,"pakistan":1,"bangladesh":1,"nepal":1,"malaysia":17,"singapore":11,"indonesia":20,"united arab emirates":16,"uae":16,"dubai":16,"turkey":13,"saudi arabia":4,"qatar":10,"kuwait":9,"egypt":5,"canada":2,"united states":2,"usa":2};
+function tripCity(t){return (t&&t.cash&&t.cash._city)||CAPS[String(t&&t.c||"").trim().toLowerCase()]||""}
+function pMethod(t){return PMETH[String(t&&t.c||"").trim().toLowerCase()]||3}
+let PTD="",PTT="",PTDATA={};
+function ptClamp(t,d){return d<t.d1?t.d1:d>t.d2?t.d2:d}
+async function ptMonth(t,ym){
+  const city=tripCity(t),m=pMethod(t),key="pt|"+city+"|"+t.c+"|"+m+"|"+ym;
+  if(PTDATA[key])return PTDATA[key];
+  const c=lsGet(key);if(c){PTDATA[key]=c;return c}
+  const [y,mo]=ym.split("-"),ac=new AbortController(),to=setTimeout(()=>ac.abort(),15000);
+  try{
+    const res=await fetch("https://api.aladhan.com/v1/calendarByCity/"+y+"/"+parseInt(mo,10)+"?city="+encodeURIComponent(city)+"&country="+encodeURIComponent(t.c)+"&method="+m,{signal:ac.signal});
+    const j=await res.json();
+    if(!j||j.code!==200||!Array.isArray(j.data))throw new Error("no data");
+    const out={};
+    j.data.forEach(x=>{const g=x.date&&x.date.gregorian&&x.date.gregorian.date;if(!g)return;const p=g.split("-"),d=p[2]+"-"+p[1]+"-"+p[0],T=x.timings||{},cl=v=>String(v||"").split(" ")[0];
+      out[d]={Fajr:cl(T.Fajr),Sunrise:cl(T.Sunrise),Dhuhr:cl(T.Dhuhr),Asr:cl(T.Asr),Maghrib:cl(T.Maghrib),Isha:cl(T.Isha),h:x.date.hijri?(x.date.hijri.day+" "+(x.date.hijri.month&&x.date.hijri.month.en)+" "+x.date.hijri.year):"",tz:x.meta&&x.meta.timezone||""}});
+    PTDATA[key]=out;lsSet(key,out);return out;
+  }finally{clearTimeout(to)}
+}
+function ptNowIn(tz){try{const f=new Intl.DateTimeFormat("en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date()),g=k=>f.find(x=>x.type===k).value;return {d:g("year")+"-"+g("month")+"-"+g("day"),t:g("hour").replace("24","00")+":"+g("minute")}}catch(e){return null}}
+async function ptRender(){
+  const card=$("ptcard");if(!card)return;
+  const t=scopeTrip();card.style.display=t?"":"none";if(!t)return;
+  if(PTT!==t.id){PTT=t.id;PTD=ptClamp(t,todayISO())}
+  PTD=ptClamp(t,PTD);const city=tripCity(t);
+  $("ptdate").textContent=dlabel(PTD);$("ptprev").disabled=PTD<=t.d1;$("ptnext").disabled=PTD>=t.d2;
+  const L=$("ptlist"),N=$("ptnote");
+  if(!city){L.textContent="";$("ptsub").textContent="";N.textContent="Add a city for this trip in Settings → Trips to see prayer times.";return}
+  $("ptsub").textContent=city+", "+t.c;
+  const myT=t.id,myD=PTD;
+  try{
+    const mon=await ptMonth(t,myD.slice(0,7));
+    if(PTT!==myT||PTD!==myD)return;
+    const x=mon[myD];
+    if(!x)throw new Error("missing");
+    const now=x.tz?ptNowIn(x.tz):null,isToday=!!now&&now.d===myD;
+    let nextK="";if(isToday)nextK=["Fajr","Dhuhr","Asr","Maghrib","Isha"].find(k=>x[k]>now.t)||"";
+    L.textContent="";
+    [["Fajr","Fajr"],["Sunrise","Sunrise"],["Dhuhr","Dhuhr"],["Asr","Asr"],["Maghrib","Maghrib"],["Isha","Isha"]].forEach(([k,n])=>{
+      const r=mk("div",{className:"ptr"+(k==="Sunrise"?" rise":"")+(k===nextK?" next":"")});r.append(mk("span",{textContent:n+(k===nextK?"  · next":"")}),mk("b",{textContent:x[k]}));L.append(r)});
+    N.textContent=[x.h?"Hijri: "+x.h:"",now?"Local time in "+city+": "+now.t:"","Times from AlAdhan (method "+pMethod(t)+")"].filter(Boolean).join(" · ");
+  }catch(e){
+    if(PTT!==myT||PTD!==myD)return;
+    L.textContent="";N.textContent=/Failed to fetch|abort|NetworkError|Load failed/i.test(String(e.message||e))||e.name==="AbortError"?"Prayer times need a connection the first time – connect and reopen this page.":"Could not load prayer times for "+city+". Check the city name in Settings → Trips.";
+  }
+}
+function ptStep(n){const t=scopeTrip();if(!t)return;const d=new Date(PTD+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+n);PTD=ptClamp(t,d.toISOString().slice(0,10));ptRender()}
+$("ptprev").onclick=()=>ptStep(-1);$("ptnext").onclick=()=>ptStep(1);
 function thRender(){
   const t=scopeTrip();if(!t&&$("thub").hidden)return;
   const today=todayISO();
   $("tht").textContent=t?"🧳 "+tripName(t):"🧳 All trips";
+  try{ptRender().catch(()=>{})}catch(e){}
   if(t){const X=trCalc(t);
     $("thd").textContent=dlabel(t.d1)+" → "+dlabel(t.d2)+" · "+(t.d2<today?"finished":t.d1>today?"starts in "+trDiff(today,t.d1)+" days":"day "+(trDiff(t.d1,today)+1)+" of "+(trDiff(t.d1,t.d2)+1));
     $("thT").textContent="MVR "+fmt(Math.round(X.total*100)/100);$("thi").textContent="Card "+fmt(Math.round(X.card*100)/100)+" · Cash "+fmt(Math.round(X.cash*100)/100)+" · opening cash: "+tpCashText(t)}
