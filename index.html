@@ -434,6 +434,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 #ptsub{text-align:center;margin-bottom:6px}
 .ptr{display:flex;justify-content:space-between;padding:9px 6px;border-bottom:1px dashed var(--line);font-variant-numeric:tabular-nums}.ptr:last-child{border-bottom:0}
 .ptr b{font-size:16px}.ptr.next{background:var(--chip);border-radius:10px;border-bottom-color:transparent;color:var(--accent);font-weight:700}.ptr.rise{color:var(--mute);font-size:13px}
+#thtime{margin-top:8px;font-weight:700;font-size:15px;background:rgba(255,255,255,.18);display:inline-block;padding:4px 12px;border-radius:99px}
 </style>
 </head>
 <body>
@@ -589,7 +590,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div id="thub" hidden role="dialog" aria-modal="true" aria-label="Trip">
 <div class="wrap">
   <div class="thh"><div class="tr"><button class="ghost" id="thb" aria-label="Back to dashboard">‹ Back</button><h1 id="tht">Trip</h1><span></span></div>
-    <small id="thd"></small><b id="thT"></b><em id="thi"></em></div>
+    <small id="thd"></small><b id="thT"></b><em id="thi"></em><div id="thtime" style="display:none"></div></div>
   <div class="pages thp"><button id="fpopen" class="pg">💳 Card Transactions</button><button id="caopen" class="pg">💵 Daily Expenses</button><button id="tropen" class="pg wide">🧳 Trip Summary</button></div>
   <div class="card" id="cvcard">
     <h2>Currency converter</h2>
@@ -2112,7 +2113,10 @@ const PMETH={"sri lanka":1,"india":1,"pakistan":1,"bangladesh":1,"nepal":1,"mala
 function tripCity(t){return (t&&t.cash&&t.cash._city)||CAPS[String(t&&t.c||"").trim().toLowerCase()]||""}
 function pMethod(t){return PMETH[String(t&&t.c||"").trim().toLowerCase()]||3}
 let PTD="",PTT="",PTDATA={};
-function ptClamp(t,d){return d<t.d1?t.d1:d>t.d2?t.d2:d}
+function ptTz(t){return lsGet("pttz|"+t.id)||""}
+function ptToday(t){const z=ptTz(t),n=z?ptNowIn(z):null;return n?n.d:todayISO()}
+function ptBounds(t){const td=ptToday(t);return [t.d1<td?t.d1:td,t.d2>td?t.d2:td]}
+function ptClamp(t,d){const b=ptBounds(t);return d<b[0]?b[0]:d>b[1]?b[1]:d}
 async function ptMonth(t,ym){
   const city=tripCity(t),m=pMethod(t),key="pt|"+city+"|"+t.c+"|"+m+"|"+ym;
   if(PTDATA[key])return PTDATA[key];
@@ -2129,12 +2133,18 @@ async function ptMonth(t,ym){
   }finally{clearTimeout(to)}
 }
 function ptNowIn(tz){try{const f=new Intl.DateTimeFormat("en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date()),g=k=>f.find(x=>x.type===k).value;return {d:g("year")+"-"+g("month")+"-"+g("day"),t:g("hour").replace("24","00")+":"+g("minute")}}catch(e){return null}}
+function ptMins(h){const p=String(h||"").split(":");return (+p[0])*60+(+p[1]||0)}
+function ptClock(){
+  const e=$("thtime");if(!e)return;const t=scopeTrip(),z=t?ptTz(t):"",n=z?ptNowIn(z):null;
+  if(!t||!n){e.style.display="none";return}
+  e.style.display="";e.textContent="🕒 "+n.t+" · "+(tripCity(t)||t.c)+" time";
+}
 async function ptRender(){
   const card=$("ptcard");if(!card)return;
-  const t=scopeTrip();card.style.display=t?"":"none";if(!t)return;
-  if(PTT!==t.id){PTT=t.id;PTD=ptClamp(t,todayISO())}
-  PTD=ptClamp(t,PTD);const city=tripCity(t);
-  $("ptdate").textContent=dlabel(PTD);$("ptprev").disabled=PTD<=t.d1;$("ptnext").disabled=PTD>=t.d2;
+  const t=scopeTrip();card.style.display=t?"":"none";ptClock();if(!t)return;
+  if(PTT!==t.id){PTT=t.id;PTD=ptToday(t)}
+  PTD=ptClamp(t,PTD);const city=tripCity(t),bd=ptBounds(t);
+  $("ptdate").textContent=dlabel(PTD);$("ptprev").disabled=PTD<=bd[0];$("ptnext").disabled=PTD>=bd[1];
   const L=$("ptlist"),N=$("ptnote");
   if(!city){L.textContent="";$("ptsub").textContent="";N.textContent="Add a city for this trip in Settings → Trips to see prayer times.";return}
   $("ptsub").textContent=city+", "+t.c;
@@ -2144,18 +2154,27 @@ async function ptRender(){
     if(PTT!==myT||PTD!==myD)return;
     const x=mon[myD];
     if(!x)throw new Error("missing");
+    if(x.tz&&ptTz(t)!==x.tz){lsSet("pttz|"+t.id,x.tz);ptClock()}
     const now=x.tz?ptNowIn(x.tz):null,isToday=!!now&&now.d===myD;
-    let nextK="";if(isToday)nextK=["Fajr","Dhuhr","Asr","Maghrib","Isha"].find(k=>x[k]>now.t)||"";
+    let cur="",nxt="",nl="";
+    if(isToday){
+      const nm=ptMins(now.t),P=["Fajr","Dhuhr","Asr","Maghrib","Isha"];
+      nxt=P.find(k=>ptMins(x[k])>nm)||"";
+      for(const k of P){if(ptMins(x[k])<=nm)cur=k}
+      if(cur==="Fajr"&&nm>=ptMins(x.Sunrise))cur="";            // Fajr time ends at sunrise
+      if(nxt){const d=ptMins(x[nxt])-nm;nl=nxt+" in "+(d>=60?Math.floor(d/60)+"h ":"")+(d%60)+"m"}else nl="Fajr tomorrow";
+    }
     L.textContent="";
-    [["Fajr","Fajr"],["Sunrise","Sunrise"],["Dhuhr","Dhuhr"],["Asr","Asr"],["Maghrib","Maghrib"],["Isha","Isha"]].forEach(([k,n])=>{
-      const r=mk("div",{className:"ptr"+(k==="Sunrise"?" rise":"")+(k===nextK?" next":"")});r.append(mk("span",{textContent:n+(k===nextK?"  · next":"")}),mk("b",{textContent:x[k]}));L.append(r)});
-    N.textContent=[x.h?"Hijri: "+x.h:"",now?"Local time in "+city+": "+now.t:"","Times from AlAdhan (method "+pMethod(t)+")"].filter(Boolean).join(" · ");
+    ["Fajr","Sunrise","Dhuhr","Asr","Maghrib","Isha"].forEach(k=>{
+      const r=mk("div",{className:"ptr"+(k==="Sunrise"?" rise":"")+(k===cur?" next":"")});r.append(mk("span",{textContent:k+(k===cur?"  · now":k===nxt?"  · next":"")}),mk("b",{textContent:x[k]}));L.append(r)});
+    N.textContent=[nl?"Next: "+nl:"",x.h?"Hijri: "+x.h:"",!isToday&&now?"Showing a different day – tap ‹ › to go back to today ("+dlabel(now.d)+")":"","Times from AlAdhan (method "+pMethod(t)+")"].filter(Boolean).join(" · ");
   }catch(e){
     if(PTT!==myT||PTD!==myD)return;
     L.textContent="";N.textContent=/Failed to fetch|abort|NetworkError|Load failed/i.test(String(e.message||e))||e.name==="AbortError"?"Prayer times need a connection the first time – connect and reopen this page.":"Could not load prayer times for "+city+". Check the city name in Settings → Trips.";
   }
 }
 function ptStep(n){const t=scopeTrip();if(!t)return;const d=new Date(PTD+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+n);PTD=ptClamp(t,d.toISOString().slice(0,10));ptRender()}
+setInterval(()=>{if(!$("thub").hidden&&document.visibilityState==="visible")ptRender().catch(()=>{})},30000);
 $("ptprev").onclick=()=>ptStep(-1);$("ptnext").onclick=()=>ptStep(1);
 function thRender(){
   const t=scopeTrip();if(!t&&$("thub").hidden)return;
