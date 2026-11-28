@@ -359,6 +359,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 #mov .wrap{max-width:720px;margin:0 auto;padding:0 12px calc(40px + env(safe-area-inset-bottom,0px))}
 #mov .trh{background:linear-gradient(135deg,#7a2fd0,#3a166f)}
 .mfm{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:8px 0;background:var(--card)}
+.mfm{display:flex;gap:10px}.mfm .mb{flex:1;min-width:0}.mpo{position:relative;flex:0 0 62px;height:92px;border-radius:8px;overflow:hidden;background:linear-gradient(160deg,#7a2fd0,#3a166f);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}.mpo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .mfm h3{margin:0 0 2px;font-size:15px}.mfm .mm{font-size:12px;opacity:.75}
 .mfm .mt{margin-top:6px;font-size:13px;font-variant-numeric:tabular-nums}.mfm .mt b{display:inline-block;min-width:78px}
 .mbd{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;background:#2f9e5f;color:#fff;vertical-align:middle}
@@ -2103,17 +2104,17 @@ $("trv").addEventListener("keydown",ev=>{if(ev.key==="Escape")trClose()});
 /* ---------- Movies: international films in Colombo cinemas (snapshot, see MOV_AS) ---------- */
 const MOV_AS="2026-11-28";
 const MOV_NOW={from:"2026-11-27",to:"2026-12-03",cin:"Scope Cinemas, Colombo City Centre",list:[
- {n:"The Hunger Games: Sunrise on the Reaping",g:"Sci-Fi · Adventure",r:"2h 38m",l:"English",t:[["Dolby Atmos","12:00 pm"],["2D","6:05 pm"]]},
- {n:"Focker-In-Law",g:"Comedy",r:"1h 40m",l:"English",t:[["2D","12:20 pm, 7:45 pm"],["Dolby Atmos","10:45 pm"]]},
- {n:"Ebenezer",g:"Drama · Comedy",r:"",l:"English",t:[["2D","1:10 pm, 3:00 pm"],["Gold Class","7:50 pm"]]},
- {n:"Godzilla Minus Zero",g:"Epic · Action",r:"2h 15m",l:"Japanese",t:[["2D","12:15 pm"]]},
- {n:"Drummer Boy",g:"Family",r:"",l:"English",t:[["2D","2:35 pm"]]},
- {n:"Teardrop Nation – Episodes 1 & 2",g:"Documentary",r:"2h 39m",l:"English",t:[["2D","5:15 pm"]]}
+ {n:"The Hunger Games: Sunrise on the Reaping",s:"the-hunger-games-sunrise-on-the-reaping",g:"Sci-Fi · Adventure",r:"2h 38m",l:"English",t:[["Dolby Atmos","12:00 pm"],["2D","6:05 pm"]]},
+ {n:"Focker-In-Law",s:"focker-in-law",g:"Comedy",r:"1h 40m",l:"English",t:[["2D","12:20 pm, 7:45 pm"],["Dolby Atmos","10:45 pm"]]},
+ {n:"Ebenezer",s:"ebenezer",g:"Drama · Comedy",r:"",l:"English",t:[["2D","1:10 pm, 3:00 pm"],["Gold Class","7:50 pm"]]},
+ {n:"Godzilla Minus Zero",s:"godzilla-minus-zero-japanese",g:"Epic · Action",r:"2h 15m",l:"Japanese",t:[["2D","12:15 pm"]]},
+ {n:"Drummer Boy",s:"drummer-boy",g:"Family",r:"",l:"English",t:[["2D","2:35 pm"]]},
+ {n:"Teardrop Nation – Episodes 1 & 2",s:"teardrop-nation-episodes-1-2",g:"Documentary",r:"2h 39m",l:"English",t:[["2D","5:15 pm"]]}
 ]};
 const MOV_SOON=[
- {n:"Avengers: Doomsday",d:"2026-12-18",l:"English",w:"Scope CCC, Scope Havelock City Mall, Liberty Colpetty",f:"Dolby Atmos · Gold Class · 3D · 2D"},
- {n:"Dune: Part Three",d:"2026-12-18",l:"English",w:"Colombo cinemas – showtimes not out yet",f:""},
- {n:"Jumanji: Open World",d:"2026-12-25",l:"English",w:"Colombo cinemas – showtimes not out yet",f:""}
+ {n:"Avengers: Doomsday",s:"avengers-doomsday",d:"2026-12-18",l:"English",w:"Scope CCC, Scope Havelock City Mall, Liberty Colpetty",f:"Dolby Atmos · Gold Class · 3D · 2D"},
+ {n:"Dune: Part Three",s:"dune-part-three",d:"2026-12-18",l:"English",w:"Colombo cinemas (list not announced yet)",f:""},
+ {n:"Jumanji: Open World",s:"jumanji-open-world",d:"2026-12-25",l:"English",w:"Colombo cinemas (list not announced yet)",f:""}
 ];
 const MOV_CIN=[
  ["Scope Cinemas – Colombo City Centre","137 Sir James Pieris Mawatha, Colombo 2 · Gold Class, Dolby Atmos, 3D","https://fdfs.lk/theatres/scope-cinemas-colombo-city-centre"],
@@ -2125,6 +2126,11 @@ const MOV_CIN=[
 ];
 function moRange(a,b){return b&&b!==a?dlabel(a)+" – "+dlabel(b):dlabel(a)}
 let MOALL=false;
+function moPoster(m){
+  const w=mk("div",{className:"mpo"}),im=mk("img",{alt:m.n,loading:"lazy",referrerPolicy:"no-referrer",src:"https://fdfs.lk/images/posters/"+m.s+".webp"});
+  w.append(mk("span",{textContent:m.n.replace(/[^A-Za-z0-9 ]/g,"").split(" ").filter(x=>x.length>2).slice(0,2).map(x=>x[0]).join("").toUpperCase()||"🎬"}),im);
+  im.onerror=()=>im.remove();return w;
+}
 function moRender(){
   const t=scopeTrip(),N=$("monote");N.textContent="";
   const tw=t&&t.d1&&t.d2?[t.d1,t.d2]:null;
@@ -2138,17 +2144,21 @@ function moRender(){
   soon.forEach(m=>{
     const c=mk("div",{className:"mfm"}),h=mk("h3",{textContent:m.n});
     if(tw)h.append(mk("span",{className:"mbd"+(m.d<tw[0]?"":" s"),textContent:m.d<tw[0]?"In cinemas when you arrive":"Opens "+dlabel(m.d)}));
-    c.append(h,mk("div",{className:"mm",textContent:m.l+" · opens "+dlabel(m.d)+(tw?" · expected to run into your trip dates":"")}),mk("div",{className:"mt",textContent:m.w+(m.f?" · "+m.f:"")}));
-    W.append(c);
+    const bd=mk("div",{className:"mb"});
+    bd.append(h,mk("div",{className:"mm",textContent:m.l+" · opens "+dlabel(m.d)}));
+    const a=mk("div",{className:"mt"});a.append(mk("b",{textContent:"Cinema"}),document.createTextNode(m.w));bd.append(a);
+    const b2=mk("div",{className:"mt"});b2.append(mk("b",{textContent:"Showtimes"}),document.createTextNode("not published yet"+(m.f?" · formats: "+m.f:"")));bd.append(b2);
+    c.append(moPoster(m),bd);W.append(c);
   });
   if(nowOn||MOALL){
     W.append(mk("div",{className:"mute sm",style:"margin-top:8px",textContent:MOV_NOW.cin+" · schedule published for "+moRange(MOV_NOW.from,MOV_NOW.to)+". Check the cinema for the time on each date."}));
     MOV_NOW.list.forEach(m=>{
       const c=mk("div",{className:"mfm"}),h=mk("h3",{textContent:m.n});
       if(tw&&!(tw[0]<=MOV_NOW.to&&tw[1]>=MOV_NOW.from))h.append(mk("span",{className:"mbd s",textContent:"Outside your trip"}));
-      c.append(h,mk("div",{className:"mm",textContent:[m.l,m.g,m.r].filter(Boolean).join(" · ")}));
-      m.t.forEach(x=>{const d=mk("div",{className:"mt"});d.append(mk("b",{textContent:x[0]}),document.createTextNode(x[1]));c.append(d)});
-      W.append(c);
+      const bd=mk("div",{className:"mb"});bd.append(h,mk("div",{className:"mm",textContent:[m.l,m.g,m.r].filter(Boolean).join(" · ")}));
+      const a=mk("div",{className:"mt"});a.append(mk("b",{textContent:"Cinema"}),document.createTextNode("Scope CCC"));bd.append(a);
+      m.t.forEach(x=>{const d=mk("div",{className:"mt"});d.append(mk("b",{textContent:x[0]}),document.createTextNode(x[1]));bd.append(d)});
+      c.append(moPoster(m),bd);W.append(c);
     });
   }
   if(!soon.length&&!(nowOn||MOALL))W.append(mk("p",{className:"mute",textContent:"No films are published yet for your trip dates. Cinemas usually release schedules about a week ahead – check the links below."}));
