@@ -358,12 +358,12 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 #mov[hidden]{display:none}
 #mov .wrap{max-width:720px;margin:0 auto;padding:0 12px calc(40px + env(safe-area-inset-bottom,0px))}
 #mov .trh{background:linear-gradient(135deg,#7a2fd0,#3a166f)}
-.mfm{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:8px 0;background:var(--card)}
-.mfm{display:flex;gap:10px}.mfm .mb{flex:1;min-width:0}.mpo{position:relative;flex:0 0 62px;height:92px;border-radius:8px;overflow:hidden;background:linear-gradient(160deg,#7a2fd0,#3a166f);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px}.mpl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;text-decoration:none;background:rgba(0,0,0,.28)}
+.mfm{border:1px solid var(--line);border-radius:14px;padding:10px;margin:10px 0;background:var(--card)}
+.mfm{display:flex;gap:10px}.mfm .mqb{flex:1;min-width:0}.mpo{position:relative;flex:0 0 78px;height:116px;border-radius:8px;overflow:hidden;background:linear-gradient(160deg,#7a2fd0,#3a166f);color:#fff;display:flex;align-items:center;justify-content:center;align-items:flex-start;padding-top:10px;box-sizing:border-box;font-weight:800;font-size:18px}.mpl{position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;padding-left:2px;text-decoration:none;background:rgba(0,0,0,.55);border:1.5px solid rgba(255,255,255,.85)}
 .mpo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.mfm h3{margin:0 0 2px;font-size:15px}.mfm .mm{font-size:12px;opacity:.75}
-.mfm .mt{margin-top:6px;font-size:13px;font-variant-numeric:tabular-nums}.mfm .mt b{display:inline-block;min-width:78px}
-.mbd{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;background:#2f9e5f;color:#fff;vertical-align:middle}
+.mfm h3{margin:0;font-size:16px;line-height:1.25}.mfm .mm{font-size:12px;opacity:.75}
+.mfm .mt{display:flex;gap:8px;margin-top:5px;font-size:13px;line-height:1.35;font-variant-numeric:tabular-nums}.mfm .mt b{flex:0 0 76px;opacity:.7;font-weight:600}
+.mbd{display:table;margin:4px 0 2px;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;background:#2f9e5f;color:#fff;vertical-align:middle}
 .mbd.s{background:#7a2fd0}
 .mcin a{display:block;padding:8px 0;border-top:1px solid var(--line);color:inherit;text-decoration:none;font-size:14px}.mcin a:first-of-type{border-top:0}.mcin a span{display:block;font-size:12px;opacity:.7}
 #trv[hidden]{display:none}
@@ -2147,7 +2147,7 @@ function moRender(){
   soon.forEach(m=>{
     const c=mk("div",{className:"mfm"}),h=mk("h3",{textContent:m.n});
     if(tw)h.append(mk("span",{className:"mbd"+(m.d<tw[0]?"":" s"),textContent:m.d<tw[0]?"In cinemas when you arrive":"Opens "+dlabel(m.d)}));
-    const bd=mk("div",{className:"mb"});
+    const bd=mk("div",{className:"mqb"});
     bd.append(h,mk("div",{className:"mm",textContent:m.l+" · opens "+dlabel(m.d)}));
     const a=mk("div",{className:"mt"});a.append(mk("b",{textContent:"Cinema"}),document.createTextNode(m.w));bd.append(a);
     const b2=mk("div",{className:"mt"});b2.append(mk("b",{textContent:"Showtimes"}),document.createTextNode("not published yet"+(m.f?" · formats: "+m.f:"")));bd.append(b2);
@@ -2158,7 +2158,7 @@ function moRender(){
     MOV_NOW.list.forEach(m=>{
       const c=mk("div",{className:"mfm"}),h=mk("h3",{textContent:m.n});
       if(tw&&!(tw[0]<=MOV_NOW.to&&tw[1]>=MOV_NOW.from))h.append(mk("span",{className:"mbd s",textContent:"Outside your trip"}));
-      const bd=mk("div",{className:"mb"});bd.append(h,mk("div",{className:"mm",textContent:[m.l,m.g,m.r].filter(Boolean).join(" · ")}));
+      const bd=mk("div",{className:"mqb"});bd.append(h,mk("div",{className:"mm",textContent:[m.l,m.g,m.r].filter(Boolean).join(" · ")}));
       const a=mk("div",{className:"mt"});a.append(mk("b",{textContent:"Cinema"}),document.createTextNode("Scope CCC"));bd.append(a);
       m.t.forEach(x=>{const d=mk("div",{className:"mt"});d.append(mk("b",{textContent:x[0]}),document.createTextNode(x[1]));bd.append(d)});
       c.append(moPoster(m),bd);W.append(c);
