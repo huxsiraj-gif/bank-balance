@@ -1293,7 +1293,13 @@ let FP=lsGet("fp")||[],FPQ=lsGet("fpq")||[],fpMon="",fpFlushing=false,fpEditId=n
 /* ---------- trip scope: Card Transactions and Daily Expenses show one trip (or all) ---------- */
 function tripName(t){return t?(t.c||"Trip")+" – "+dlabel(t.d1):""}
 function scopeTrip(){let v="";try{v=localStorage.getItem("scope")||""}catch(e){}if(v==="all")return null;return typeof activeTrip==="function"?activeTrip():null}
-function inTrip(t,d){d=String(d||"").slice(0,10);return !t||((!t.d1||d>=t.d1)&&(!t.d2||d<=t.d2))}
+function tripWin(t){                       // entries made before departure (e.g. the dollars you exchange at home) belong to the upcoming trip; later ones to the last trip
+  if(!t||!t.id)return {a:t&&t.d1||"",b:t&&t.d2||""};
+  const L=TRIPS.slice().sort((x,y)=>String(x.d1).localeCompare(String(y.d1))),i=L.findIndex(x=>x.id===t.id);
+  if(i<0)return {a:t.d1||"",b:t.d2||""};
+  return {a:i>0?L[i-1].d2:"",b:i<L.length-1?t.d2:"9999-12-31",pa:i>0};
+}
+function inTrip(t,d){if(!t)return true;d=String(d||"").slice(0,10);const w=tripWin(t);return (!w.a||(w.pa?d>w.a:d>=w.a))&&(!w.b||d<=w.b)}
 function scoped(list){const t=scopeTrip();return t?list.filter(r=>inTrip(t,r.d)):list}
 function scopeBuild(id,cb){
   const e=$(id);if(!e)return;e.textContent="";
@@ -1873,7 +1879,7 @@ function trRange(at0){
   return at?{s:at.d1||"",e:at.d2||"",b:tpBudgetMvr(at),at}:{s:TRIP.s,e:TRIP.e,b:num(TRIP.b),at:null};
 }
 function trCalc(at0){
-  const R=trRange(at0),today=todayISO(),inR=d=>{d=isoOf(d)||"";return d&&(!R.s||d>=R.s)&&(!R.e||d<=R.e)};
+  const R=trRange(at0),today=todayISO(),inR=d=>{d=isoOf(d)||"";return d&&(R.at?inTrip(R.at,d):(!R.s||d>=R.s)&&(!R.e||d<=R.e))};
   const V=caValue(CA.filter(r=>inTrip(R.at||{d1:R.s,d2:R.e},r.d))),days={},src={};let card=0,cash=0,nCard=0,nCash=0,pend=0,nPend=0;
   const cardCur={},cashCur={};let big=null,ex={usd:0,lkr:0,n:0};const bigC=(n,v)=>{if(!big||v>big.v)big={n:n||"(no name)",v:v}};
   const day=d=>days[d]||(days[d]={card:0,cash:0});
