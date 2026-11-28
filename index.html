@@ -1612,8 +1612,9 @@ function caHint(){
   const rest=CA.filter(z=>z.id!==caEditId),b=caBal(rest),a=num($("caamt").value);
   if(caKind==="ex"){
     const g=num($("carecv").value);
-    e.append(document.createTextNode("In hand now: USD "+fmt(b.USD.bal)+" · LKR "+fmt(b.LKR.bal)));
-    if(a>0){const au=b.USD.bal-a;e.append(document.createTextNode("  →  after: USD "),mk("b",{textContent:(au<0?"−":"")+fmt(Math.abs(au)),style:au<0?"color:var(--bad)":""}),document.createTextNode(" · LKR "+fmt(b.LKR.bal+(g>0?g:0))))}
+    e.append(document.createTextNode("Dollars available to exchange: USD "+fmt(Math.max(0,b.USD.bal))));
+    if(a>b.USD.bal+0.004){e.append(document.createTextNode("  –  "),mk("b",{textContent:"more than you have",style:"color:var(--bad)"}))}
+    else if(a>0)e.append(document.createTextNode("  →  after: USD "+fmt(b.USD.bal-a)+" · LKR "+fmt(b.LKR.bal+(g>0?g:0))));
     return;
   }
   const c=$("cacur").value,bal=b[c]?b[c].bal:0;
@@ -1642,6 +1643,8 @@ function caAdd(){
   const v={d:$("cad").value||todayISO(),k:caKind,n:$("canm").value.trim(),t:$("cant").value.trim(),a:Math.round(a*100)/100,to:null,ta:null,r:null};
   let rate=0;
   if(caKind==="ex"){
+    const avail=caBal(CA.filter(z=>z.id!==caEditId)).USD.bal;
+    if(a>avail+0.004){toast(avail>0?"You only have USD "+fmt(avail)+" in cash in hand to exchange":"No dollars in cash in hand – add them with Cash in first");$("caamt").focus();return}
     rate=num($("carate").value);let g=num($("carecv").value);
     if(!(rate>0)&&g>0)rate=g/a;
     if(!(rate>0)){toast("Enter the exchange rate (LKR per 1 USD)");$("carate").focus();return}
