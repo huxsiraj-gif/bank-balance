@@ -380,6 +380,19 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 .trd .m{grid-column:1/-1;font-size:12px;color:var(--mute)}
 .exr{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 0;border-bottom:1px dashed var(--line)}
 .exr:last-child{border-bottom:0}.exr .n{font-weight:600}.exr .v{font-weight:700;font-variant-numeric:tabular-nums}.exr .m{grid-column:1/-1;font-size:12px;color:var(--mute)}
+
+#tsh{position:fixed;inset:0;z-index:36;background:rgba(0,20,20,.55);display:flex;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#tsh[hidden]{display:none}
+#tsh .acts{grid-column:1/-1;display:grid;gap:8px;margin-top:6px}
+#tsh .acts button.del{background:transparent;box-shadow:none;border:1px solid var(--bad);color:var(--bad)}
+#tsh .acts button.del.sure{background:var(--bad);color:#fff}
+.tpr{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line);cursor:pointer}
+.tpr:last-child{border-bottom:0}.tpr:active{background:var(--chip)}
+.tpr .n{font-weight:700}.tpr .m{grid-column:1;font-size:12px;color:var(--mute)}
+.tpr .act{grid-column:2;grid-row:1/3}
+.tpr .chip2{font-size:12px;font-weight:700;color:var(--accent);background:var(--chip);border-radius:999px;padding:4px 10px}
+.tpr button.use{min-height:32px;padding:4px 10px;font-size:12.5px}
+#trinfo .n{font-weight:700;font-size:15px}
 </style>
 </head>
 <body>
@@ -516,6 +529,12 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
     <div><label for="rusd">1 USD = ? MVR (dollar rate)</label><input id="rusd" type="number" step="0.0001" inputmode="decimal"></div>
     <div><label for="eday">Month ends on day (1–28; 31 = calendar month)</label><input id="eday" type="number" min="1" max="31" step="1" inputmode="numeric"></div>
   </div>
+  <div id="tripset">
+    <label>Trips</label>
+    <div id="tplist"></div>
+    <button id="tpnew" class="ghost" style="width:100%;border:1px solid var(--line);margin-top:6px">＋ Create trip</button>
+    <p class="mute sm" id="tpnote">Create a trip with the country, dates and the cash you take. That cash becomes the trip's cash budget; card payments are tracked separately.</p>
+  </div>
   <p class="mute sm" id="sdn"></p>
   <p class="sm"><a id="sheet" target="_blank" rel="noopener" href="#">Open database ↗</a></p>
   <div id="st">Loading…</div>
@@ -612,14 +631,15 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div id="trv" hidden role="dialog" aria-modal="true" aria-label="Trip summary">
 <div class="wrap">
   <div class="trh">
-    <div class="tr"><button class="ghost" id="trb2" aria-label="Back to dashboard">‹ Back</button><h1>🧳 Trip Summary</h1><button class="ghost" id="trrf" aria-label="Refresh">↻</button></div>
+    <div class="tr"><button class="ghost" id="trb2" aria-label="Back to dashboard">‹ Back</button><h1 id="trh1">🧳 Trip Summary</h1><button class="ghost" id="trrf" aria-label="Refresh">↻</button></div>
     <small id="trl">Total trip spending · MVR</small>
     <b id="trT">MVR 0.00</b>
     <div class="trc" id="trchips"></div>
     <div id="trbud"></div>
   </div>
   <div id="trst"></div>
-  <div class="card">
+  <div class="card" id="trinfo" style="display:none"><h2>Trip</h2><div id="trinfob"></div><p class="mute sm">Change the country, dates or cash in Settings → Trips.</p></div>
+  <div class="card" id="trset">
     <h2>Trip settings</h2>
     <div class="f">
       <div><label for="trs">Trip start</label><input id="trs" type="date"></div>
@@ -633,6 +653,17 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   <p class="mute sm" style="text-align:center">Card spending is the MVR your bank deducted. Cash spending is valued at the exchange rate of the cash you spent (first exchange first). Nothing here changes your balance.</p>
 </div>
 </div>
+<div id="tsh" hidden><div class="dtbox" role="dialog" aria-modal="true" aria-labelledby="tpt"><div class="dth"><b id="tpt">Create trip</b><button class="ghost" id="tpx" aria-label="Close">✕</button></div>
+<div class="f">
+  <div class="w"><label for="tpc">Country</label><input id="tpc" placeholder="e.g. Sri Lanka" autocomplete="off" list="tpcl"><datalist id="tpcl"><option>Sri Lanka</option><option>India</option><option>Thailand</option><option>Malaysia</option><option>Singapore</option><option>United Arab Emirates</option></datalist></div>
+  <div><label for="tpd1">Departure date</label><input id="tpd1" type="date"></div>
+  <div><label for="tpd2">Arrival date (back home)</label><input id="tpd2" type="date"></div>
+  <div class="w" style="font-weight:700;margin-top:4px">Cash you take (trip cash budget)</div>
+  <div><label for="tpu">USD</label><input id="tpu" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+  <div><label for="tpl">LKR</label><input id="tpl" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+  <div class="w mute sm" id="tpbud"></div>
+  <div class="acts"><button id="tpdel" class="del" style="display:none">Delete trip</button><button id="tpsave">Save trip</button></div>
+</div></div></div>
 <div id="mv" hidden><div class="dtbox" role="dialog" aria-modal="true" aria-labelledby="mvt"><div class="dth"><b id="mvt">Move to Expenses?</b><button class="ghost" id="mvx" aria-label="Close">✕</button></div>
 <div class="sum" id="mvs"></div>
 <label for="mvd">Expense date</label><input id="mvd" type="date">
@@ -820,6 +851,7 @@ async function loadInner(){
     ready=true;lastLoad=Date.now();lsSet("cache",S);
     $("sheet").href=dbUrl();$("sheet2").href=dbUrl();$("cards").classList.remove("loading");
     render();totals();status("Loaded from database ✓ ("+((Date.now()-t0)/1000).toFixed(1)+"s)");
+    if(typeof tripsLoad==="function")tripsLoad();
   }catch(e){
     if(String(e.message)==="unauthorized"){try{localStorage.removeItem("sb")}catch(x){}SB=null;ready=false;showSetup("Your session expired. Please log in again.");return}
     if(!ready){const c=lsGet("cache");if(c){S=Object.assign(blank(),c);setClosed(null);render();totals()}}
@@ -1688,11 +1720,109 @@ $("carateh").addEventListener("change",()=>{const v=num($("carateh").value);CAR.
 $("caadd").onclick=caAdd;$("cacancel").onclick=caFormReset;$("caamt").onkeydown=ev=>{if(ev.key==="Enter")caAdd()};
 $("cav").addEventListener("keydown",ev=>{if(ev.key==="Escape")caClose()});
 
+/* ---------- Trips (Settings): country, dates, opening cash ---------- */
+let TRIPS=lsGet("trips")||[],TPQ=lsGet("tpq")||[],tpFlushing=false,tpEdit=null,tpSure=false;
+function tpActiveId(){try{return localStorage.getItem("tripact")||""}catch(e){return ""}}
+function activeTrip(){
+  if(!TRIPS.length)return null;
+  let t=TRIPS.find(x=>x.id===tpActiveId());if(t)return t;
+  const today=todayISO();t=TRIPS.find(x=>x.d1&&x.d2&&x.d1<=today&&today<=x.d2);if(t)return t;
+  return TRIPS.slice().sort((a,b)=>String(b.d1||"").localeCompare(String(a.d1||"")))[0];
+}
+function tpCashText(t){return ["USD","LKR"].filter(c=>t.cash&&t.cash[c]&&num(t.cash[c].a)>0).map(c=>c+" "+fmt(num(t.cash[c].a))).join(" · ")||"no cash set"}
+function tpBudgetMvr(t){                       // value of the opening cash in MVR
+  const mu=caMvrUsd(),rt=caRateEff().v,c=t.cash||{};
+  return (c.USD?num(c.USD.a)*mu:0)+(c.LKR&&rt>0?num(c.LKR.a)*mu/rt:0);
+}
+function tpRender(){
+  const L=$("tplist");if(!L)return;L.textContent="";
+  const act=activeTrip();
+  TRIPS.slice().sort((a,b)=>String(b.d1||"").localeCompare(String(a.d1||""))).forEach(t=>{
+    const row=mk("div",{className:"tpr"});row.tabIndex=0;row.setAttribute("role","button");
+    row.append(mk("div",{className:"n",textContent:"🧳 "+(t.c||"Trip")}));
+    const a=mk("div",{className:"act"});
+    if(act&&act.id===t.id)a.append(mk("span",{className:"chip2",textContent:"Active"}));
+    else{const b=mk("button",{className:"ghost use",textContent:"Use"});b.onclick=ev=>{ev.stopPropagation();try{localStorage.setItem("tripact",t.id)}catch(e){}tpRender();trRender();toast("Active trip: "+(t.c||"Trip"))};a.append(b)}
+    row.append(a,mk("div",{className:"m",textContent:dlabel(t.d1)+" → "+dlabel(t.d2)+" · cash: "+tpCashText(t)}));
+    row.onclick=()=>tpOpen(t);row.onkeydown=ev=>{if(ev.key==="Enter")tpOpen(t)};
+    L.append(row);
+  });
+  if(!TRIPS.length)L.append(mk("p",{className:"mute sm",textContent:"No trips yet."}));
+}
+async function tpFlush(){
+  if(tpFlushing)return;tpFlushing=true;
+  try{while(TPQ.length){const op=TPQ[0];if(op.k==="s")await rpc("trip_save",{p:op.r});else await rpc("trip_delete",{pid:op.id});TPQ.shift();lsSet("tpq",TPQ)}}
+  finally{tpFlushing=false}
+}
+async function tripsLoad(){
+  try{
+    await tpFlush();
+    if(TPQ.length)return;
+    const d=await rpc("trip_get");
+    if(!Array.isArray(d))return;
+    if(TPQ.length)return;
+    TRIPS=d;lsSet("trips",TRIPS);tpRender();
+    if(typeof trRender==="function"&&!$("trv").hidden)trRender();
+  }catch(e){
+    const m=String(e.message||e);
+    if(m!=="unauthorized"&&!/Failed to fetch|NetworkError|Load failed/i.test(m))$("tpnote").textContent="Trips could not load: "+m.slice(0,120)+" (run trips.sql in Supabase if you have not yet)";
+  }
+}
+function tpPush(op){TPQ.push(op);lsSet("tpq",TPQ);lsSet("trips",TRIPS);tpRender();tpFlush().catch(e=>{$("tpnote").textContent="Saved on this phone, will sync later ("+String(e.message||e).slice(0,80)+")"})}
+function tpOpen(t){
+  tpEdit=t||null;tpSure=false;
+  $("tpt").textContent=t?"Edit trip":"Create trip";
+  $("tpc").value=t?t.c:"";$("tpd1").value=t?t.d1||"":"";$("tpd2").value=t?t.d2||"":"";
+  const c=(t&&t.cash)||{};$("tpu").value=c.USD?c.USD.a:"";$("tpl").value=c.LKR?c.LKR.a:"";
+  const b=$("tpdel");b.style.display=t?"":"none";b.textContent="Delete trip";b.classList.remove("sure");
+  tpBud();$("tsh").hidden=false;
+}
+function tpClose(){$("tsh").hidden=true;tpEdit=null}
+function tpBud(){
+  const t={cash:{USD:{a:num($("tpu").value)},LKR:{a:num($("tpl").value)}}},v=tpBudgetMvr(t);
+  $("tpbud").textContent=v>0?"Cash budget ≈ MVR "+fmt(Math.round(v*100)/100)+" (dollars at "+caMvrUsd()+" MVR, rupees at your dollar rate)":"This cash is added to Cash in Hand and becomes the trip's cash budget.";
+}
+function tpSave(){
+  const c=$("tpc").value.trim(),d1=$("tpd1").value,d2=$("tpd2").value;
+  if(!c){toast("Enter the country");$("tpc").focus();return}
+  if(!d1){toast("Enter the departure date");$("tpd1").focus();return}
+  if(!d2){toast("Enter the arrival date");$("tpd2").focus();return}
+  if(d2<d1){toast("Arrival date must be after the departure date");$("tpd2").focus();return}
+  const prev=tpEdit&&tpEdit.cash||{},cash={},amts={USD:num($("tpu").value),LKR:num($("tpl").value)};
+  ["USD","LKR"].forEach(cur=>{
+    const a=Math.round(amts[cur]*100)/100,pid=prev[cur]&&prev[cur].id,ex=pid?CA.find(x=>x.id===pid):null;
+    if(a>0){
+      const id=pid||uid(),v={d:d1,k:"in",cur:cur,a:a,n:"Trip cash – "+c,t:"",to:null,ta:null,r:null};
+      let r;if(ex){Object.assign(ex,v);r=ex}else{r=Object.assign({id:id},v);CA.push(r)}
+      caPush({k:"s",r:Object.assign({},r)});cash[cur]={a:a,id:id};
+    }else if(pid){
+      CA=CA.filter(x=>x.id!==pid);caPush({k:"d",id:pid});
+    }
+  });
+  const t={id:tpEdit?tpEdit.id:uid(),c:c,d1:d1,d2:d2,cash:cash};
+  if(tpEdit)TRIPS=TRIPS.map(x=>x.id===t.id?t:x);else TRIPS.push(t);
+  try{localStorage.setItem("tripact",t.id)}catch(e){}
+  tpPush({k:"s",r:t});tpClose();trRender();toast(tpEdit?"Trip updated":"Trip created – cash added to Cash in Hand");
+}
+function tpDelete(){
+  if(!tpEdit)return;
+  if(!tpSure){tpSure=true;const b=$("tpdel");b.textContent="Tap again to delete";b.classList.add("sure");return}
+  const t=tpEdit;TRIPS=TRIPS.filter(x=>x.id!==t.id);tpPush({k:"d",id:t.id});tpClose();trRender();toast("Trip deleted – its cash entries stay in Cash in Hand");
+}
+$("tpnew").onclick=()=>tpOpen(null);$("tpx").onclick=tpClose;$("tpsave").onclick=tpSave;$("tpdel").onclick=tpDelete;
+$("tsh").addEventListener("click",ev=>{if(ev.target===$("tsh"))tpClose()});
+["tpu","tpl"].forEach(i=>$(i).addEventListener("input",tpBud));
+tpRender();
+
 /* ---------- Trip Summary (card + cash spending abroad, in MVR) ---------- */
 let TRIP=lsGet("trip")||{s:"",e:"",b:""};
 function trDiff(a,b){const p=x=>{const[y,m,d]=x.split("-").map(Number);return Date.UTC(y,m-1,d)};return Math.round((p(b)-p(a))/86400000)}
+function trRange(){
+  const at=activeTrip();
+  return at?{s:at.d1||"",e:at.d2||"",b:tpBudgetMvr(at),at}:{s:TRIP.s,e:TRIP.e,b:num(TRIP.b),at:null};
+}
 function trCalc(){
-  const today=todayISO(),inR=d=>{d=isoOf(d)||"";return d&&(!TRIP.s||d>=TRIP.s)&&(!TRIP.e||d<=TRIP.e)};
+  const R=trRange(),today=todayISO(),inR=d=>{d=isoOf(d)||"";return d&&(!R.s||d>=R.s)&&(!R.e||d<=R.e)};
   const V=caValue(CA),days={},src={};let card=0,cash=0,nCard=0,nCash=0,pend=0,nPend=0;
   const cardCur={},cashCur={};
   const day=d=>days[d]||(days[d]={card:0,cash:0});
@@ -1708,30 +1838,52 @@ function trCalc(){
   });
   FP.forEach(r=>{if(!inR(r.d)||!(num(r.b)>0))return;const k=r.n?r.n.trim():"(no name)",y=src[k]||(src[k]={v:0,n:0});y.v+=num(r.b);y.n++});
   const total=Math.round((card+cash)*100)/100,dates=Object.keys(days).sort();
-  const start=TRIP.s||dates[0]||today,end=TRIP.e&&TRIP.e<today?TRIP.e:today;
-  const nDays=Math.max(1,trDiff(start,end<start?start:end)+1);
-  return {card,cash,total,nCard,nCash,pend,nPend,cardCur,cashCur,days,dates,start,end,nDays,src};
+  const start=R.s||dates[0]||today,end=R.e&&R.e<today?R.e:today;
+  const nDays=start>today?1:Math.max(1,trDiff(start,end<start?start:end)+1);
+  return {R,card,cash,total,nCard,nCash,pend,nPend,cardCur,cashCur,days,dates,start,end,nDays,src};
 }
 function trRender(){
-  const T=trCalc(),r2=x=>Math.round(x*100)/100;
+  if(!$("trv"))return;
+  const T=trCalc(),R=T.R,r2=x=>Math.round(x*100)/100,at=R.at,today=todayISO();
+  $("trh1").textContent=at?"🧳 "+(at.c||"Trip"):"🧳 Trip Summary";
+  let lab="Total trip spending · MVR";
+  if(at&&at.d1&&at.d2){
+    const tot=trDiff(at.d1,at.d2)+1;
+    lab=dlabel(at.d1)+" → "+dlabel(at.d2)+" · "+(today<at.d1?"starts in "+trDiff(today,at.d1)+" days":today>at.d2?"trip finished":"day "+(trDiff(at.d1,today)+1)+" of "+tot)+" · total spending (MVR)";
+  }
+  $("trl").textContent=lab;
   $("trT").textContent="MVR "+fmt(T.total);
   const per=T.total/T.nDays;
   const box=$("trchips");box.textContent="";
   const chip=(a,b,c)=>{const d=mk("div");d.append(document.createTextNode(a),mk("b",{textContent:b}),mk("i",{textContent:c}));box.append(d)};
   chip("Card (bank deducted)","MVR "+fmt(r2(T.card)),T.nCard+(T.nCard===1?" purchase":" purchases")+(T.nPend?" · "+T.nPend+" awaiting bank"+(T.pend>0?" (≈ MVR "+fmt(r2(T.pend))+" more)":""):""));
   chip("Cash spent","MVR "+fmt(r2(T.cash)),Object.keys(T.cashCur).sort().map(c=>c+" "+fmt(T.cashCur[c])).join(" · ")||"nothing yet");
-  chip("Average per day","MVR "+fmt(r2(per)),T.nDays+(T.nDays===1?" day":" days")+" ("+dlabel(T.start)+" – "+dlabel(T.end)+")");
+  chip("Average per day","MVR "+fmt(r2(per)),T.start>todayISO()?"trip not started yet":T.nDays+(T.nDays===1?" day":" days")+" ("+dlabel(T.start)+" – "+dlabel(T.end)+")");
   chip("Foreign card spend",Object.keys(T.cardCur).sort().map(c=>c+" "+fmt(T.cardCur[c])).join(" · ")||"–","before conversion");
-  const bg=num(TRIP.b),bd=$("trbud");bd.textContent="";
-  if(bg>0){
-    const left=bg-T.total,pc=Math.min(100,Math.max(0,T.total/bg*100));
-    bd.append(document.createTextNode("Budget MVR "+fmt(bg)+" · "+(left>=0?"left ":"over by ")),mk("b",{textContent:"MVR "+fmt(r2(Math.abs(left)))}));
-    const bar=mk("div",{className:"bar"}),fill=mk("i",{className:left<0?"over":""});fill.style.width=pc.toFixed(1)+"%";bar.append(fill);bd.append(bar);
-    const ex=[Math.round(T.total/bg*100)+"% used"];
-    if(TRIP.e&&TRIP.e>todayISO()){const dl=trDiff(todayISO(),TRIP.e)+1;if(left>0)ex.push("about MVR "+fmt(r2(left/dl))+" per day for the remaining "+dl+" days")}
-    bd.append(mk("span",{textContent:ex.join(" · ")}));
+  const bd=$("trbud");bd.textContent="";
+  if(at){
+    const bg=R.b,spent=T.cash,left=bg-spent,pc=bg>0?Math.min(100,Math.max(0,spent/bg*100)):0,b2=caBal(CA),V2=caValue(CA);
+    const hand=b2.USD.bal*V2.mu+V2.lotsMvr+(b2.LKR.bal<0&&V2.rt>0?b2.LKR.bal*V2.mu/V2.rt:0);
+    if(bg>0){
+      bd.append(document.createTextNode("Cash budget MVR "+fmt(r2(bg))+" · "+(left>=0?"left ":"over by ")),mk("b",{textContent:"MVR "+fmt(r2(Math.abs(left)))}));
+      const bar=mk("div",{className:"bar"}),fill=mk("i",{className:left<0?"over":""});fill.style.width=pc.toFixed(1)+"%";bar.append(fill);bd.append(bar);
+      const ex=[Math.round(spent/bg*100)+"% of cash budget used"];
+      if(at.d2&&at.d2>=today&&left>0){const dl=trDiff(today<at.d1?at.d1:today,at.d2)+1;ex.push("about MVR "+fmt(r2(left/dl))+" per day for the remaining "+dl+" days")}
+      bd.append(mk("span",{textContent:ex.join(" · ")}));
+    }else bd.append(document.createTextNode("No opening cash set for this trip – edit it in Settings → Trips to set a cash budget."));
+    bd.append(mk("div",{textContent:"Cash in hand now ≈ MVR "+fmt(r2(hand))+" · card payments are not counted against the cash budget",style:"font-size:12px;opacity:.9;margin-top:4px"}));
+  }else{
+    const bg=R.b;
+    if(bg>0){
+      const left=bg-T.total,pc=Math.min(100,Math.max(0,T.total/bg*100));
+      bd.append(document.createTextNode("Budget MVR "+fmt(bg)+" · "+(left>=0?"left ":"over by ")),mk("b",{textContent:"MVR "+fmt(r2(Math.abs(left)))}));
+      const bar=mk("div",{className:"bar"}),fill=mk("i",{className:left<0?"over":""});fill.style.width=pc.toFixed(1)+"%";bar.append(fill);bd.append(bar);
+      bd.append(mk("span",{textContent:Math.round(T.total/bg*100)+"% used"}));
+    }
   }
-  $("trnote").textContent=(TRIP.s?"":"No start date set – counting all entries. ")+"Days are counted from the start date up to "+(TRIP.e&&TRIP.e<todayISO()?"the end date":"today")+".";
+  $("trinfo").style.display=at?"":"none";$("trset").style.display=at?"none":"";
+  if(at){const ib=$("trinfob");ib.textContent="";ib.append(mk("div",{className:"n",textContent:at.c||"Trip"}),mk("div",{className:"mute sm",textContent:dlabel(at.d1)+" → "+dlabel(at.d2)+" · opening cash: "+tpCashText(at)}));}
+  $("trnote").textContent=at?"":(R.s?"":"No start date set – counting all entries. ")+"Days are counted from the start date up to "+(R.e&&R.e<today?"the end date":"today")+".";
   const L=$("trdays");L.textContent="";
   T.dates.slice().reverse().forEach(d=>{
     const x=T.days[d],row=mk("div",{className:"trd"});
@@ -1748,7 +1900,7 @@ function trRender(){
 }
 async function trSync(){
   $("trst").textContent="Updating…";
-  try{await Promise.all([fpSync(),caSync(),fxLoad(false)])}catch(e){}
+  try{await Promise.all([fpSync(),caSync(),fxLoad(false),tripsLoad()])}catch(e){}
   trRender();$("trst").textContent=($("fpst").className==="bad"||$("cast").className==="bad")?"Some data could not be refreshed – showing the last saved copy.":"Up to date ✓";
 }
 function trOpen(){
@@ -1791,7 +1943,7 @@ function logout(e){
   const msg=un?("You have "+un+" entry(s) not saved to the database yet. Logging out will lose them. Log out anyway?"):"Log out of Income Tracker on this phone? Your data stays safe in your database.";
   if(!confirm(msg))return;
   if(SB&&SB.at){fetch(SB.url+"/auth/v1/logout",{method:"POST",headers:{apikey:SB.key,Authorization:"Bearer "+SB.at}}).catch(()=>{})}
-  ["sb","cache","pend","pendi","eq","pin","pinlen","ca","caq","carate","trip","fp","fpq"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
+  ["sb","cache","pend","pendi","eq","pin","pinlen","ca","caq","carate","trip","trips","tpq","tripact","fp","fpq"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
   PEND=[];PENDI=[];EQ=[];SB=null;ready=false;S=blank();
   $("lock").hidden=true;$("appwrap").hidden=true;showSetup("You are logged out. Enter your password to log in again.");
 }
