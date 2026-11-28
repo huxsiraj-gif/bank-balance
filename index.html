@@ -405,6 +405,19 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 .dchart div s{display:block;background:#f0a04b;text-decoration:none}
 .tar{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-bottom:1px dashed var(--line);cursor:pointer}.tar:last-child{border-bottom:0}
 .tar .n{font-weight:700}.tar .v{font-weight:700;text-align:right}.tar .m{grid-column:1/3;font-size:12px;color:var(--mute)}
+
+#thub{position:fixed;inset:0;z-index:15;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+#thub::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(rgba(246,245,241,.45),rgba(246,245,241,.45)),url(bg.jpg) center/cover no-repeat}
+#thub[hidden]{display:none}
+#thub .wrap{max-width:720px;margin:0 auto;padding:0 12px calc(40px + env(safe-area-inset-bottom,0px))}
+.thh{background:linear-gradient(135deg,#0c8f86,#14b5a5);color:#fff;border-radius:0 0 22px 22px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 16px;margin:0 -12px 12px}
+.thh .tr{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px}.thh h1{font-size:18px;margin:0;text-align:center;color:#fff}
+.thh .ghost{color:#fff;background:rgba(255,255,255,.18);border:0}.thh small{display:block;margin-top:10px;opacity:.9}.thh b{display:block;font-size:26px;margin:2px 0}.thh em{font-style:normal;font-size:12.5px;opacity:.92}
+.thp{grid-template-columns:1fr}.thp .pg{min-height:56px;font-size:16px!important;justify-content:flex-start;text-align:left;padding:10px 16px}
+#dtrips{grid-template-columns:1fr}
+#dtrips .dtt{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.04em;margin:0 2px}
+#dtrips .pg{display:grid;grid-template-columns:1fr auto;gap:1px 8px;text-align:left;padding:10px 14px;min-height:56px}
+#dtrips .pg b{font-size:15px}#dtrips .pg span{font-size:12px;font-weight:500;color:var(--mute);grid-column:1}#dtrips .pg i{font-style:normal;grid-column:2;grid-row:1/3;align-self:center;font-size:12px;font-weight:700;color:var(--accent)}
 </style>
 </head>
 <body>
@@ -443,7 +456,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div id="appwrap" hidden>
 <div class="top"><h1>Siraj Account Balance</h1><span><button class="ghost" id="rf" title="Refresh">↻</button> <button class="ghost" id="lk" title="Lock the app" aria-label="Lock the app">🔒</button></span></div>
 
-<div class="pages"><button id="fpopen" class="pg">🌍 Foreign Purchases</button><button id="caopen" class="pg">💵 Cash in Hand</button><button id="tropen" class="pg wide">🧳 Trip Summary</button></div>
+<div class="pages" id="dtrips"></div>
 <div id="cards" class="loading">
 <div id="bar"><div><small>Balance</small><b id="bb">0.00</b></div><div><small>R. Balance</small><b id="br">0.00</b></div></div>
 
@@ -559,6 +572,13 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 </div>
 
 <!-- Foreign Purchases: separate page, not linked to any other entry -->
+<div id="thub" hidden role="dialog" aria-modal="true" aria-label="Trip">
+<div class="wrap">
+  <div class="thh"><div class="tr"><button class="ghost" id="thb" aria-label="Back to dashboard">‹ Back</button><h1 id="tht">Trip</h1><span></span></div>
+    <small id="thd"></small><b id="thT"></b><em id="thi"></em></div>
+  <div class="pages thp"><button id="fpopen" class="pg">🌍 Foreign Purchases</button><button id="caopen" class="pg">💵 Cash in Hand</button><button id="tropen" class="pg wide">🧳 Trip Summary</button></div>
+  <p class="mute sm" style="text-align:center">Everything in these three pages shows only this trip.</p>
+</div></div>
 <div id="fpv" hidden role="dialog" aria-modal="true" aria-label="Foreign purchases">
 <div class="wrap">
   <div class="fph">
@@ -1274,18 +1294,19 @@ document.addEventListener("visibilitychange",()=>{
 /* ---------- Foreign Purchases page (own table, not linked to any other entry) ---------- */
 let FP=lsGet("fp")||[],FPQ=lsGet("fpq")||[],fpMon="",fpFlushing=false,fpEditId=null;
 /* ---------- trip scope: Foreign Purchases and Cash in Hand show one trip (or all) ---------- */
+function tripName(t){return t?(t.c||"Trip")+" – "+dlabel(t.d1):""}
 function scopeTrip(){let v="";try{v=localStorage.getItem("scope")||""}catch(e){}if(v==="all")return null;return typeof activeTrip==="function"?activeTrip():null}
 function inTrip(t,d){d=String(d||"").slice(0,10);return !t||((!t.d1||d>=t.d1)&&(!t.d2||d<=t.d2))}
 function scoped(list){const t=scopeTrip();return t?list.filter(r=>inTrip(t,r.d)):list}
 function scopeBuild(id,cb){
   const e=$(id);if(!e)return;e.textContent="";
   const t=scopeTrip();
-  TRIPS.slice().sort((a,b)=>String(b.d1).localeCompare(String(a.d1))).forEach(x=>e.append(mk("option",{value:x.id,textContent:"🧳 "+(x.c||"Trip")+" · "+dlabel(x.d1)+" → "+dlabel(x.d2)})));
+  TRIPS.slice().sort((a,b)=>String(b.d1).localeCompare(String(a.d1))).forEach(x=>e.append(mk("option",{value:x.id,textContent:"🧳 "+tripName(x)})));
   e.append(mk("option",{value:"all",textContent:"All trips / everything"}));
   e.value=t?t.id:"all";e.style.display=TRIPS.length?"":"none";
   e.onchange=()=>{const v=e.value;try{if(v==="all")localStorage.setItem("scope","all");else{localStorage.setItem("scope","");localStorage.setItem("tripact",v)}}catch(x){}tpRender();fpRender();caRender();trRender()};
 }
-function scopeWarn(d){const t=scopeTrip();if(t&&!inTrip(t,d))setTimeout(()=>toast("Saved – dated outside "+(t.c||"this trip")+", so it shows under “All trips”"),400)}
+function scopeWarn(d){const t=scopeTrip();if(t&&!inTrip(t,d))setTimeout(()=>toast("Saved – dated outside "+tripName(t)+", so it shows under “All trips”"),400)}
 function fpMonths(list){const m={};list.forEach(r=>{const k=String(r.d||"").slice(0,7);if(/^\d{4}-\d{2}$/.test(k))m[k]=1});return Object.keys(m).sort().reverse()}
 function fpMonthLabel(k){const[y,m]=k.split("-");return["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1]+" "+y}
 function fpShown(list,mon){return list.filter(r=>!mon||String(r.d||"").slice(0,7)===mon)}
@@ -1306,7 +1327,7 @@ function fpRender(){
   months.forEach(k=>sel.append(mk("option",{value:k,textContent:fpMonthLabel(k)})));
   sel.value=fpMon;
   const list=fpShown(FPs,fpMon),t=fpTotals(list),stp=scopeTrip();
-  $("fpl").textContent=fpMon?"Deducted from bank · "+fpMonthLabel(fpMon):"Total deducted from bank · "+(stp?(stp.c||"trip"):"all time");
+  $("fpl").textContent=fpMon?"Deducted from bank · "+fpMonthLabel(fpMon):"Total deducted from bank · "+(stp?tripName(stp):"all time");
   const tb=$("fpT");tb.textContent="";tb.append(mk("i",{textContent:"MVR"}),document.createTextNode(fmt(t.bank)));
   $("fpn").textContent=t.n+(t.n===1?" purchase":" purchases")+(t.wait?" · "+t.wait+" awaiting bank":"");
   const box=$("fpchips");box.textContent="";
@@ -1770,15 +1791,16 @@ function tpRender(){
   const act=activeTrip();
   TRIPS.slice().sort((a,b)=>String(b.d1||"").localeCompare(String(a.d1||""))).forEach(t=>{
     const row=mk("div",{className:"tpr"});row.tabIndex=0;row.setAttribute("role","button");
-    row.append(mk("div",{className:"n",textContent:"🧳 "+(t.c||"Trip")}));
+    row.append(mk("div",{className:"n",textContent:"🧳 "+tripName(t)}));
     const a=mk("div",{className:"act"});
     if(act&&act.id===t.id)a.append(mk("span",{className:"chip2",textContent:"Active"}));
-    else{const b=mk("button",{className:"ghost use",textContent:"Use"});b.onclick=ev=>{ev.stopPropagation();try{localStorage.setItem("tripact",t.id)}catch(e){}tpRender();trRender();toast("Active trip: "+(t.c||"Trip"))};a.append(b)}
+    else{const b=mk("button",{className:"ghost use",textContent:"Use"});b.onclick=ev=>{ev.stopPropagation();try{localStorage.setItem("tripact",t.id)}catch(e){}tpRender();trRender();toast("Active trip: "+tripName(t))};a.append(b)}
     row.append(a,mk("div",{className:"m",textContent:dlabel(t.d1)+" → "+dlabel(t.d2)+" · cash: "+tpCashText(t)}));
     row.onclick=()=>tpOpen(t);row.onkeydown=ev=>{if(ev.key==="Enter")tpOpen(t)};
     L.append(row);
   });
   if(!TRIPS.length)L.append(mk("p",{className:"mute sm",textContent:"No trips yet."}));
+  try{dtRender();thRender()}catch(e){}
 }
 async function tpFlush(){
   if(tpFlushing)return;tpFlushing=true;
@@ -1877,7 +1899,7 @@ function trCalc(at0){
 function trRender(){
   if(!$("trv"))return;
   const T=trCalc(),R=T.R,r2=x=>Math.round(x*100)/100,at=R.at,today=todayISO();
-  $("trh1").textContent=at?"🧳 "+(at.c||"Trip"):"🧳 Trip Summary";
+  $("trh1").textContent=at?"🧳 "+tripName(at):"🧳 Trip Summary";
   let lab="Total trip spending · MVR";
   if(at&&at.d1&&at.d2){
     const tot=trDiff(at.d1,at.d2)+1;
@@ -1937,12 +1959,12 @@ function trRender(){
     const al=$("tralll");al.textContent="";$("trall").style.display=TRIPS.length>1?"":"none";
     TRIPS.slice().sort((a,b)=>String(b.d1).localeCompare(String(a.d1))).forEach(t=>{
       const X=trCalc(t),row=mk("div",{className:"tar"});
-      row.append(mk("div",{className:"n",textContent:"🧳 "+(t.c||"Trip")+(at&&at.id===t.id?" ✓":"")}),mk("div",{className:"v",textContent:"MVR "+fmt(r2(X.total))}),
+      row.append(mk("div",{className:"n",textContent:"🧳 "+tripName(t)+(at&&at.id===t.id?" ✓":"")}),mk("div",{className:"v",textContent:"MVR "+fmt(r2(X.total))}),
         mk("div",{className:"m",textContent:dlabel(t.d1)+" → "+dlabel(t.d2)+" · card "+fmt(r2(X.card))+" · cash "+fmt(r2(X.cash))+" · "+(t.d2<today?"finished":t.d1>today?"upcoming":"in progress")}));
       row.onclick=()=>{try{localStorage.setItem("tripact",t.id)}catch(e){}tpRender();trRender();$("trv").scrollTo&&$("trv").scrollTo(0,0)};al.append(row)});
   }
   $("trinfo").style.display=at?"":"none";$("trset").style.display=at?"none":"";
-  if(at){const ib=$("trinfob");ib.textContent="";ib.append(mk("div",{className:"n",textContent:at.c||"Trip"}),mk("div",{className:"mute sm",textContent:dlabel(at.d1)+" → "+dlabel(at.d2)+" · opening cash: "+tpCashText(at)}));}
+  if(at){const ib=$("trinfob");ib.textContent="";ib.append(mk("div",{className:"n",textContent:tripName(at)}),mk("div",{className:"mute sm",textContent:dlabel(at.d1)+" → "+dlabel(at.d2)+" · opening cash: "+tpCashText(at)}));}
   $("trnote").textContent=at?"":(R.s?"":"No start date set – counting all entries. ")+"Days are counted from the start date up to "+(R.e&&R.e<today?"the end date":"today")+".";
   const L=$("trdays");L.textContent="";
   T.dates.slice().reverse().forEach(d=>{
@@ -1975,8 +1997,38 @@ $("tropen").onclick=trOpen;$("trb2").onclick=trClose;$("trrf").onclick=trSync;
 ["trs","tre","trbg"].forEach(i=>$(i).addEventListener("change",trSave));$("trbg").addEventListener("input",trSave);
 $("trv").addEventListener("keydown",ev=>{if(ev.key==="Escape")trClose()});
 
+/* ---------- dashboard Trips list + trip hub ---------- */
+function dtRender(){
+  const D=$("dtrips");if(!D)return;D.textContent="";
+  D.append(mk("div",{className:"dtt",textContent:"Trips"}));
+  const today=todayISO();
+  TRIPS.slice().sort((a,b)=>String(b.d1).localeCompare(String(a.d1))).forEach(t=>{
+    const X=trCalc(t),b=mk("button",{className:"pg"});
+    b.append(mk("b",{textContent:"🧳 "+tripName(t)}),mk("span",{textContent:dlabel(t.d1)+" → "+dlabel(t.d2)+" · MVR "+fmt(Math.round(X.total*100)/100)+" spent"}),
+      mk("i",{textContent:t.d2<today?"Finished ›":t.d1>today?"Upcoming ›":"In progress ›"}));
+    b.onclick=()=>thOpen(t.id);D.append(b);
+  });
+  const nb=mk("button",{className:"pg",textContent:"＋ Create trip"});nb.style.textAlign="center";nb.onclick=()=>tpOpen(null);D.append(nb);
+  if(TRIPS.length>1){const ab=mk("button",{className:"pg",textContent:"All trips together"});ab.style.textAlign="center";ab.onclick=()=>thOpen("all");D.append(ab)}
+}
+function thRender(){
+  const t=scopeTrip();if(!t&&$("thub").hidden)return;
+  const today=todayISO();
+  $("tht").textContent=t?"🧳 "+tripName(t):"🧳 All trips";
+  if(t){const X=trCalc(t);
+    $("thd").textContent=dlabel(t.d1)+" → "+dlabel(t.d2)+" · "+(t.d2<today?"finished":t.d1>today?"starts in "+trDiff(today,t.d1)+" days":"day "+(trDiff(t.d1,today)+1)+" of "+(trDiff(t.d1,t.d2)+1));
+    $("thT").textContent="MVR "+fmt(Math.round(X.total*100)/100);$("thi").textContent="Card "+fmt(Math.round(X.card*100)/100)+" · Cash "+fmt(Math.round(X.cash*100)/100)+" · opening cash: "+tpCashText(t)}
+  else{$("thd").textContent="Everything, across all trips";let tot=0;TRIPS.forEach(x=>tot+=trCalc(x).total);$("thT").textContent="MVR "+fmt(Math.round(tot*100)/100);$("thi").textContent=TRIPS.length+" trips"}
+}
+function thOpen(id){
+  try{if(id==="all")localStorage.setItem("scope","all");else{localStorage.setItem("scope","");localStorage.setItem("tripact",id)}}catch(e){}
+  $("thub").hidden=false;document.body.style.overflow="hidden";thRender();tpRender();
+}
+function thClose(){$("thub").hidden=true;document.body.style.overflow=""}
+$("thb").onclick=thClose;$("thub").addEventListener("keydown",ev=>{if(ev.key==="Escape"&&$("fpv").hidden&&$("cav").hidden&&$("trv").hidden)thClose()});
+dtRender();
 /* ---------- login screen ---------- */
-function showSetup(msg){
+function showSetup(msg){try{thClose()}catch(e){}
   $("appwrap").hidden=true;$("setup").hidden=false;
   $("cerr").textContent=msg||"";
   const c=lsGet("sbcfg");if(c){$("cu").value=c.url||"";$("ck").value=c.key||"";$("ce").value=c.email||""}
