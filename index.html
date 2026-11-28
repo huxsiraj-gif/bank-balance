@@ -655,8 +655,8 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
       <button id="cacancel" class="w ghost" style="display:none">Cancel editing</button>
     </div>
   </div>
-  <div class="card"><h2>Cash entries</h2><div id="calist"></div><p class="mute" id="caempty" style="display:none">No cash entries yet. Start with "Cash in" for the cash you are holding.</p></div>
-  <div class="card" id="caexc" style="display:none"><h2>Money exchanges</h2><div class="mute sm" id="caexs"></div><div id="caexl"></div></div>
+  <div class="card" id="cacard"><h2 class="tg tg2" data-c="cacard"><span><i>▾</i>Cash entries</span><span class="sum" id="casum"></span></h2><div id="calist"></div><p class="mute" id="caempty" style="display:none">No cash entries yet. Start with "Cash in" for the cash you are holding.</p></div>
+  <div class="card" id="caexc" style="display:none"><h2 class="tg tg2" data-c="caexc"><span><i>▾</i>Money exchanges</span><span class="sum" id="caexsum"></span></h2><div class="mute sm" id="caexs"></div><div id="caexl"></div></div>
   <p class="mute sm" style="text-align:center">Use this page for cash only. Card payments go in Card Transactions. Nothing here changes your balance, expenses or income.</p>
 </div>
 </div>
@@ -1058,7 +1058,7 @@ function render(){
   applyClosed();
 }
 function applyClosed(){const c=S.closed||{};KEYS.forEach(k=>$(k).classList.toggle("closed",!!c[k]))}
-document.querySelectorAll(".tg").forEach(h=>h.addEventListener("click",()=>{S.closed=S.closed||{};const k=h.dataset.k;S.closed[k]=!S.closed[k];applyClosed()}));
+document.querySelectorAll(".tg:not(.tg2)").forEach(h=>h.addEventListener("click",()=>{S.closed=S.closed||{};const k=h.dataset.k;S.closed[k]=!S.closed[k];applyClosed()}));
 $("mon").onchange=e=>{curMon=e.target.value;renderHist();renderChart()};
 $("q").oninput=e=>{q=e.target.value.trim().toLowerCase();renderHist()};
 $("bank").oninput=e=>{S.bank=e.target.value;totals();persist()};
@@ -1630,11 +1630,13 @@ function caRender(){
     row.tabIndex=0;row.setAttribute("role","button");row.onclick=()=>caEdit(r);row.onkeydown=ev=>{if(ev.key==="Enter")caEdit(r)};
     L.append(row);
   });
+  $("casum").textContent=CAs.length+(CAs.length===1?" entry":" entries");
   $("caempty").style.display=CAs.length?"none":"block";
   const ex=CAs.filter(x=>x.k==="ex"),X=$("caexc");
   X.style.display=ex.length?"":"none";
   if(ex.length){
     const sumU=ex.reduce((t,x)=>t+num(x.a),0),sumL=ex.reduce((t,x)=>t+num(x.ta),0),rs=ex.map(x=>num(x.r)).filter(v=>v>0);
+    $("caexsum").textContent=ex.length+(ex.length===1?" exchange":" exchanges");
     $("caexs").textContent=ex.length+(ex.length===1?" exchange":" exchanges")+" · USD "+fmt(sumU)+" → LKR "+fmt(sumL)+(sumU>0?" · average "+(sumL/sumU).toFixed(2)+" LKR per USD":"")+(rs.length>1?" · lowest "+Math.min(...rs)+" · highest "+Math.max(...rs):"");
     const EL=$("caexl");EL.textContent="";
     ex.map((x,i)=>({x,i})).sort((p,q)=>String(q.x.d||"").localeCompare(String(p.x.d||""))||q.i-p.i).forEach(({x})=>{
@@ -1766,6 +1768,11 @@ function caClose(){
   $("cav").hidden=true;document.body.style.overflow="";
   try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
 }
+/* collapsible Daily Expenses lists (remembered on this phone; closed by default) */
+let CAC=lsGet("caclosed")||{cacard:1,caexc:1};
+function caCollapse(){["cacard","caexc"].forEach(k=>{const e=$(k);if(e)e.classList.toggle("closed",!!CAC[k])})}
+document.querySelectorAll(".tg2").forEach(h=>h.addEventListener("click",()=>{const k=h.dataset.c;CAC[k]=CAC[k]?0:1;lsSet("caclosed",CAC);caCollapse()}));
+caCollapse();
 $("caopen").onclick=caOpen;$("cab").onclick=caClose;$("carf").onclick=()=>{if(typeof fxLoad==="function")fxLoad(true).then(caRender).catch(()=>{});caSync()};$("cast").onclick=()=>{if($("cast").className==="bad")caSync()};
 $("cakin").onclick=()=>caSetKind("in");$("cakout").onclick=()=>caSetKind("out");$("cakex").onclick=()=>caSetKind("ex");
 $("cacur").onchange=caHint;
