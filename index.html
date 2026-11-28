@@ -2008,7 +2008,7 @@ function dtRender(){
       mk("i",{textContent:t.d2<today?"Finished ›":t.d1>today?"Upcoming ›":"In progress ›"}));
     b.onclick=()=>thOpen(t.id);D.append(b);
   });
-  const nb=mk("button",{className:"pg",textContent:"＋ Create trip"});nb.style.textAlign="center";nb.onclick=()=>tpOpen(null);D.append(nb);
+  if(!TRIPS.length)D.append(mk("p",{className:"mute sm",textContent:"No trips yet. Create one in Settings → Trips."}));
   if(TRIPS.length>1){const ab=mk("button",{className:"pg",textContent:"All trips together"});ab.style.textAlign="center";ab.onclick=()=>thOpen("all");D.append(ab)}
 }
 function thRender(){
