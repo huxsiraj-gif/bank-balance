@@ -313,7 +313,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 
 .pages{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 10px}
 .pages .pg{min-height:42px;padding:8px 6px;font-size:13.5px;font-weight:700;background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:none}
-/* ---- Cash in Hand page ---- */
+/* ---- Daily Expenses page ---- */
 #cav{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
 #cav[hidden]{display:none}
 #cav::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(rgba(246,245,241,.45),rgba(246,245,241,.45)),url(bg.jpg) center/cover no-repeat}
@@ -576,7 +576,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div class="wrap">
   <div class="thh"><div class="tr"><button class="ghost" id="thb" aria-label="Back to dashboard">‹ Back</button><h1 id="tht">Trip</h1><span></span></div>
     <small id="thd"></small><b id="thT"></b><em id="thi"></em></div>
-  <div class="pages thp"><button id="fpopen" class="pg">💳 Card Transactions</button><button id="caopen" class="pg">💵 Cash in Hand</button><button id="tropen" class="pg wide">🧳 Trip Summary</button></div>
+  <div class="pages thp"><button id="fpopen" class="pg">💳 Card Transactions</button><button id="caopen" class="pg">💵 Daily Expenses</button><button id="tropen" class="pg wide">🧳 Trip Summary</button></div>
   <div class="card" id="cvcard">
     <h2>Currency converter</h2>
     <div class="seg cvs"><button id="cvlive" class="on">Live rates</button><button id="cvman">Manual rates</button></div>
@@ -627,11 +627,11 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 </div>
 </main>
 
-<!-- Cash in Hand: separate page, not linked to any other entry -->
-<div id="cav" hidden role="dialog" aria-modal="true" aria-label="Cash in hand">
+<!-- Daily Expenses: separate page, not linked to any other entry -->
+<div id="cav" hidden role="dialog" aria-modal="true" aria-label="Daily expenses">
 <div class="wrap">
   <div class="cah">
-    <div class="tr"><button class="ghost" id="cab" aria-label="Back to dashboard">‹ Back</button><h1>💵 Cash in Hand</h1><button class="ghost" id="carf" aria-label="Refresh">↻</button></div>
+    <div class="tr"><button class="ghost" id="cab" aria-label="Back to dashboard">‹ Back</button><h1>💵 Daily Expenses</h1><button class="ghost" id="carf" aria-label="Refresh">↻</button></div>
     <select id="catrip" aria-label="Trip" style="max-width:100%;margin-bottom:6px"></select>
     <small>Cash balance (cash in − cash spent)</small>
     <div class="cab"><div><span>USD</span><b id="cbu">0.00</b><em id="cbui"></em></div><div><span>LKR</span><b id="cbl">0.00</b><em id="cbli"></em></div></div>
@@ -1293,7 +1293,7 @@ document.addEventListener("visibilitychange",()=>{
 
 /* ---------- Card Transactions page (own table, not linked to any other entry) ---------- */
 let FP=lsGet("fp")||[],FPQ=lsGet("fpq")||[],fpMon="",fpFlushing=false,fpEditId=null;
-/* ---------- trip scope: Card Transactions and Cash in Hand show one trip (or all) ---------- */
+/* ---------- trip scope: Card Transactions and Daily Expenses show one trip (or all) ---------- */
 function tripName(t){return t?(t.c||"Trip")+" – "+dlabel(t.d1):""}
 function scopeTrip(){let v="";try{v=localStorage.getItem("scope")||""}catch(e){}if(v==="all")return null;return typeof activeTrip==="function"?activeTrip():null}
 function inTrip(t,d){d=String(d||"").slice(0,10);return !t||((!t.d1||d>=t.d1)&&(!t.d2||d<=t.d2))}
@@ -1550,7 +1550,7 @@ $("fpopen").onclick=fpOpen;$("fpb").onclick=fpClose;$("fprf").onclick=()=>{fxLoa
 $("fpv").addEventListener("keydown",ev=>{if(ev.key==="Escape")fpClose()});
 
 
-/* ---------- Cash in Hand page (own table; USD and LKR cash) ---------- */
+/* ---------- Daily Expenses page (own table; USD and LKR cash) ---------- */
 let CA=lsGet("ca")||[],CAQ=lsGet("caq")||[],CAR=lsGet("carate")||{v:0},caFlushing=false,caEditId=null,caKind="out";
 function caBal(list){
   const b={USD:{i:0,o:0,x:0},LKR:{i:0,o:0,x:0}};   // x: USD exchanged away / LKR received from exchange
@@ -1702,7 +1702,7 @@ function caHint(){
     return;
   }
   const c=$("cacur").value,bal=b[c]?b[c].bal:0;
-  e.append(document.createTextNode("Cash in hand now: "+c+" "+fmt(bal)));
+  e.append(document.createTextNode("Cash left now: "+c+" "+fmt(bal)));
   if(a>0){
     const after=caKind==="in"?bal+a:bal-a;
     e.append(document.createTextNode("  →  after this: "),mk("b",{textContent:c+" "+(after<0?"−":"")+fmt(Math.abs(after)),style:after<0?"color:var(--bad)":""}));
@@ -1728,7 +1728,7 @@ function caAdd(){
   let rate=0;
   if(caKind==="ex"){
     const avail=caBal(scoped(CA).filter(z=>z.id!==caEditId)).USD.bal;
-    if(a>avail+0.004){toast(avail>0?"You only have USD "+fmt(avail)+" in cash in hand to exchange":"No dollars in cash in hand – add them with Cash in first");$("caamt").focus();return}
+    if(a>avail+0.004){toast(avail>0?"You only have USD "+fmt(avail)+" in Daily Expenses cash to exchange":"No dollars in Daily Expenses – add them with Cash in first");$("caamt").focus();return}
     rate=num($("carate").value);let g=num($("carecv").value);
     if(!(rate>0)&&g>0)rate=g/a;
     if(!(rate>0)){toast("Enter the exchange rate (LKR per 1 USD)");$("carate").focus();return}
@@ -1833,7 +1833,7 @@ function tpOpen(t){
 function tpClose(){$("tsh").hidden=true;tpEdit=null}
 function tpBud(){
   const t={cash:{USD:{a:num($("tpu").value)},LKR:{a:num($("tpl").value)}}},v=tpBudgetMvr(t);
-  $("tpbud").textContent=v>0?"Cash budget ≈ MVR "+fmt(Math.round(v*100)/100)+" (dollars at "+caMvrUsd()+" MVR, rupees at your dollar rate)":"This cash is added to Cash in Hand and becomes the trip's cash budget.";
+  $("tpbud").textContent=v>0?"Cash budget ≈ MVR "+fmt(Math.round(v*100)/100)+" (dollars at "+caMvrUsd()+" MVR, rupees at your dollar rate)":"This cash is added to Daily Expenses and becomes the trip's cash budget.";
 }
 function tpSave(){
   const c=$("tpc").value.trim(),d1=$("tpd1").value,d2=$("tpd2").value;
@@ -1855,12 +1855,12 @@ function tpSave(){
   const t={id:tpEdit?tpEdit.id:uid(),c:c,d1:d1,d2:d2,cash:cash};
   if(tpEdit)TRIPS=TRIPS.map(x=>x.id===t.id?t:x);else TRIPS.push(t);
   try{localStorage.setItem("tripact",t.id)}catch(e){}
-  tpPush({k:"s",r:t});tpClose();trRender();toast(tpEdit?"Trip updated":"Trip created – cash added to Cash in Hand");
+  tpPush({k:"s",r:t});tpClose();trRender();toast(tpEdit?"Trip updated":"Trip created – cash added to Daily Expenses");
 }
 function tpDelete(){
   if(!tpEdit)return;
   if(!tpSure){tpSure=true;const b=$("tpdel");b.textContent="Tap again to delete";b.classList.add("sure");return}
-  const t=tpEdit;TRIPS=TRIPS.filter(x=>x.id!==t.id);tpPush({k:"d",id:t.id});tpClose();trRender();toast("Trip deleted – its cash entries stay in Cash in Hand");
+  const t=tpEdit;TRIPS=TRIPS.filter(x=>x.id!==t.id);tpPush({k:"d",id:t.id});tpClose();trRender();toast("Trip deleted – its cash entries stay in Daily Expenses");
 }
 $("tpnew").onclick=()=>tpOpen(null);$("tpx").onclick=tpClose;$("tpsave").onclick=tpSave;$("tpdel").onclick=tpDelete;
 $("tsh").addEventListener("click",ev=>{if(ev.target===$("tsh"))tpClose()});
@@ -1925,7 +1925,7 @@ function trRender(){
       if(at.d2&&at.d2>=today&&left>0){const dl=trDiff(today<at.d1?at.d1:today,at.d2)+1;ex.push("about MVR "+fmt(r2(left/dl))+" per day for the remaining "+dl+" days")}
       bd.append(mk("span",{textContent:ex.join(" · ")}));
     }else bd.append(document.createTextNode("No opening cash set for this trip – edit it in Settings → Trips to set a cash budget."));
-    bd.append(mk("div",{textContent:"Cash in hand now ≈ MVR "+fmt(r2(hand))+" · card payments are not counted against the cash budget",style:"font-size:12px;opacity:.9;margin-top:4px"}));
+    bd.append(mk("div",{textContent:"Cash left now ≈ MVR "+fmt(r2(hand))+" · card payments are not counted against the cash budget",style:"font-size:12px;opacity:.9;margin-top:4px"}));
   }else{
     const bg=R.b;
     if(bg>0){
