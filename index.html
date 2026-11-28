@@ -550,8 +550,6 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
     <div><label for="bank">Bank amount (income received)</label><input id="bank" type="number" step="0.01" inputmode="decimal"></div>
     <div><label for="inc">Expected income (added to R. Balance)</label><input id="inc" type="number" step="0.01" inputmode="decimal"></div>
     <div><label for="bud2">Monthly budget (0 = off)</label><input id="bud2" type="number" step="0.01" inputmode="decimal"></div>
-    <div><label for="rlkr">1 LKR = ? MVR (Sri Lanka rupee rate)</label><input id="rlkr" type="number" step="0.0001" inputmode="decimal"></div>
-    <div><label for="rusd">1 USD = ? MVR (dollar rate)</label><input id="rusd" type="number" step="0.0001" inputmode="decimal"></div>
     <div><label for="eday">Month ends on day (1–28; 31 = calendar month)</label><input id="eday" type="number" min="1" max="31" step="1" inputmode="numeric"></div>
   </div>
   <div id="tripset">
@@ -888,6 +886,7 @@ async function loadInner(){
     $("sheet").href=dbUrl();$("sheet2").href=dbUrl();$("cards").classList.remove("loading");
     render();totals();status("Loaded from database ✓ ("+((Date.now()-t0)/1000).toFixed(1)+"s)");
     if(typeof tripsLoad==="function")tripsLoad();
+    if(typeof fxLoad==="function")fxLoad(false).catch(()=>{});
   }catch(e){
     if(String(e.message)==="unauthorized"){try{localStorage.removeItem("sb")}catch(x){}SB=null;ready=false;showSetup("Your session expired. Please log in again.");return}
     if(!ready){const c=lsGet("cache");if(c){S=Object.assign(blank(),c);setClosed(null);render();totals()}}
@@ -1052,7 +1051,7 @@ function render(){
   renderUp();renderHist();renderForeign();renderChart();renderMini();
   const dl=$("names");dl.textContent="";const seen=new Set();
   for(let i=S.exp.length-1;i>=0&&seen.size<60;i--){const n=(S.exp[i].n||"").trim(),k=n.toLowerCase();if(n&&!seen.has(k)){seen.add(k);dl.append(new Option(n))}}
-  $("bank").value=S.bank;$("inc").value=S.income;$("bud2").value=S.budget||"";$("eday").value=eday();$("rlkr").value=S.rlkr;$("rusd").value=S.rusd;
+  $("bank").value=S.bank;$("inc").value=S.income;$("bud2").value=S.budget||"";$("eday").value=eday();
   $("sdn").textContent="Current month: "+mlabel(tmk())+(eday()>=29?"":". It starts the day after the previous month ended.");
   applyClosed();
 }
@@ -1064,8 +1063,6 @@ $("bank").oninput=e=>{S.bank=e.target.value;totals();persist()};
 $("inc").oninput=e=>{S.income=e.target.value;totals();persist()};
 $("bud2").oninput=e=>{S.budget=e.target.value;totals();persist()};
 $("eday").oninput=e=>{const v=parseInt(e.target.value,10);if(v>=1&&v<=31){S.end=v;curMon=null;render();totals();persist()}};
-$("rlkr").oninput=e=>{const v=num(e.target.value);if(v>0){S.rlkr=v;useRate();persist()}};
-$("rusd").oninput=e=>{const v=num(e.target.value);if(v>0){S.rusd=v;useRate();persist()}};
 $("eday").onchange=e=>{e.target.value=eday()};
 
 /* ---------- adding ---------- */
@@ -1082,7 +1079,7 @@ $("en").addEventListener("input",()=>{
   const v=$("en").value.trim().toLowerCase();if(!v)return;
   for(let i=S.exp.length-1;i>=0;i--){if((S.exp[i].n||"").toLowerCase()===v){$("ec").value=CATS.includes(catOf(S.exp[i]))?catOf(S.exp[i]):"Other";break}}
 });
-function rateOf(c){return c==="LKR"?(num(S.rlkr)||0.05):c==="USD"?(num(S.rusd)||15.42):1}
+function rateOf(c){if(c==="MVR")return 1;const l=typeof fxCross==="function"?fxCross(c,"MVR"):0;if(l>0)return +l.toFixed(4);return c==="LKR"?(num(S.rlkr)||0.05):c==="USD"?(num(S.rusd)||15.42):1}
 function useRate(){const c=$("fcur").value;$("fcn").textContent=c;$("fr").value=rateOf(c);convHint()}
 function convHint(){
   const c=$("fcur").value,v=num($("fa").value),r=num($("fr").value);
@@ -1396,6 +1393,7 @@ async function fxLoad(force){
   finally{clearTimeout(t)}
   if(cvRates()&&!$("cvu").value&&!$("cvl").value&&!$("cvm").value)$("cvu").value="1";
   fxRender();fpCalc();cvCalc();
+  try{if(!$("fa").value)useRate()}catch(e){}
 }
 function fxCross(a,b){const r=FX&&FX.r;return r&&r[a]>0&&r[b]>0?r[b]/r[a]:0}   // 1 a = ? b
 function fxRender(){
