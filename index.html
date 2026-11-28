@@ -310,6 +310,37 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 .h{align-items:flex-start}
 .hdel{flex:0 0 auto;align-self:center;min-height:34px;min-width:36px;padding:4px 8px;font-size:15px;background:transparent;box-shadow:none;border:0;color:var(--mute);border-radius:10px}
 .hdel.sure{background:var(--bad);color:#fff;font-size:12px;font-weight:700;padding:4px 10px}
+
+.pages{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 10px}
+.pages .pg{min-height:42px;padding:8px 6px;font-size:13.5px;font-weight:700;background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+/* ---- Cash in Hand page ---- */
+#cav{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+#cav[hidden]{display:none}
+#cav::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(rgba(246,245,241,.45),rgba(246,245,241,.45)),url(bg.jpg) center/cover no-repeat}
+@media (prefers-color-scheme:dark){#cav::before{background:linear-gradient(rgba(6,18,19,.82),rgba(6,18,19,.82)),url(bg.jpg) center/cover no-repeat}}
+#cav .wrap{max-width:720px;margin:0 auto;padding:0 12px calc(40px + env(safe-area-inset-bottom,0px))}
+.cah{position:relative;margin:0 -12px 12px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 12px;background:linear-gradient(135deg,#b8861b,#6b4a0b);color:#fff;border-radius:0 0 22px 22px;box-shadow:0 8px 24px rgba(80,55,5,.3)}
+.cah .tr{display:flex;align-items:center;gap:6px}
+.cah h1{flex:1;margin:0;font-size:17px;color:#fff}
+.cah button.ghost{color:#fff;background:rgba(255,255,255,.18);border-radius:12px;min-height:38px;padding:4px 12px;box-shadow:none}
+.cah small{display:block;font-size:12px;opacity:.88;margin-top:8px}
+.cab{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.cab div{background:rgba(255,255,255,.16);border-radius:14px;padding:8px 12px}
+.cab span{display:block;font-size:12px;opacity:.9}
+.cab b{display:block;font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:-.01em;overflow-wrap:anywhere}
+.cab b.neg{color:#ffd0c8}
+.cab em{display:block;font-style:normal;font-size:11.5px;opacity:.85;margin-top:2px}
+#camvr{font-size:12.5px;margin-top:8px;opacity:.95}
+.cas{grid-column:1/-1}.cas.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#cast{font-size:12px;color:var(--mute);margin:0 4px 10px}#cast.bad{color:var(--bad);cursor:pointer;font-weight:600}
+.car{display:grid;grid-template-columns:1fr auto auto;gap:2px 8px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.car:last-child{border-bottom:0}.car:active{background:var(--chip)}
+.car .n{font-weight:600;overflow-wrap:anywhere}
+.car .m{grid-column:1;font-size:12px;color:var(--mute);overflow-wrap:anywhere}
+.car .v{grid-column:2;grid-row:1/3;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.car .v.in{color:var(--accent)}.car .v.out{color:var(--bad)}
+.car .hdel{grid-column:3;grid-row:1/3}
+#cav .f label{margin:0 0 3px}
 </style>
 </head>
 <body>
@@ -346,8 +377,9 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 
 <!-- App -->
 <div id="appwrap" hidden>
-<div class="top"><h1>Siraj Account Balance</h1><span><button class="ghost" id="fpopen" title="Foreign purchases">🌍 Foreign</button> <button class="ghost" id="rf" title="Refresh">↻</button> <button class="ghost" id="lk" title="Lock the app" aria-label="Lock the app">🔒</button></span></div>
+<div class="top"><h1>Siraj Account Balance</h1><span><button class="ghost" id="rf" title="Refresh">↻</button> <button class="ghost" id="lk" title="Lock the app" aria-label="Lock the app">🔒</button></span></div>
 
+<div class="pages"><button id="fpopen" class="pg">🌍 Foreign Purchases</button><button id="caopen" class="pg">💵 Cash in Hand</button></div>
 <div id="cards" class="loading">
 <div id="bar"><div><small>Balance</small><b id="bb">0.00</b></div><div><small>R. Balance</small><b id="br">0.00</b></div></div>
 
@@ -503,6 +535,35 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <div id="foot"><span id="who"></span></div>
 </div>
 </main>
+
+<!-- Cash in Hand: separate page, not linked to any other entry -->
+<div id="cav" hidden role="dialog" aria-modal="true" aria-label="Cash in hand">
+<div class="wrap">
+  <div class="cah">
+    <div class="tr"><button class="ghost" id="cab" aria-label="Back to dashboard">‹ Back</button><h1>💵 Cash in Hand</h1><button class="ghost" id="carf" aria-label="Refresh">↻</button></div>
+    <small>Cash balance (cash in − cash spent)</small>
+    <div class="cab"><div><span>USD</span><b id="cbu">0.00</b><em id="cbui"></em></div><div><span>LKR</span><b id="cbl">0.00</b><em id="cbli"></em></div></div>
+    <div id="camvr"></div>
+  </div>
+  <div id="cast"></div>
+  <div class="card">
+    <h2 id="cah2">Add cash entry</h2>
+    <div class="seg cvs"><button id="cakin" class="on">＋ Cash in</button><button id="cakout">− Cash spent</button></div>
+    <div class="f" style="margin-top:8px">
+      <div><label for="cacur">Currency</label><select id="cacur"><option>LKR</option><option>USD</option></select></div>
+      <div><label for="caamt">Amount</label><input id="caamt" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+      <input id="canm" class="w" placeholder="What for (e.g. Taxi, Lunch)" autocomplete="off">
+      <div><label for="cad">Date</label><input id="cad" type="date"></div>
+      <div><label for="cant">Note</label><input id="cant" placeholder="optional" autocomplete="off"></div>
+      <div id="cahint" class="w" style="font-size:13px;color:var(--mute)"></div>
+      <button id="caadd" class="w">Add</button>
+      <button id="cacancel" class="w ghost" style="display:none">Cancel editing</button>
+    </div>
+  </div>
+  <div class="card"><h2>Cash entries</h2><div id="calist"></div><p class="mute" id="caempty" style="display:none">No cash entries yet. Start with "Cash in" for the cash you are holding.</p></div>
+  <p class="mute sm" style="text-align:center">Use this page for cash only. Card payments go in Foreign Purchases. Nothing here changes your balance, expenses or income.</p>
+</div>
+</div>
 <div id="mv" hidden><div class="dtbox" role="dialog" aria-modal="true" aria-labelledby="mvt"><div class="dth"><b id="mvt">Move to Expenses?</b><button class="ghost" id="mvx" aria-label="Close">✕</button></div>
 <div class="sum" id="mvs"></div>
 <label for="mvd">Expense date</label><input id="mvd" type="date">
@@ -1337,6 +1398,132 @@ $("fpopen").onclick=fpOpen;$("fpb").onclick=fpClose;$("fprf").onclick=()=>{fxLoa
 $("fpv").addEventListener("keydown",ev=>{if(ev.key==="Escape")fpClose()});
 
 
+/* ---------- Cash in Hand page (own table; USD and LKR cash) ---------- */
+let CA=lsGet("ca")||[],CAQ=lsGet("caq")||[],caFlushing=false,caEditId=null,caKind="out";
+function caBal(list){
+  const b={USD:{i:0,o:0},LKR:{i:0,o:0}};
+  list.forEach(r=>{const c=String(r.cur||"LKR").toUpperCase();const x=b[c]||(b[c]={i:0,o:0});if(r.k==="in")x.i+=num(r.a);else x.o+=num(r.a)});
+  return b;
+}
+function caStat(t,bad){const e=$("cast");e.textContent=t;e.className=bad?"bad":""}
+function caRender(){
+  const b=caBal(CA);
+  [["USD","cbu","cbui"],["LKR","cbl","cbli"]].forEach(([c,id,ii])=>{
+    const x=b[c],bal=Math.round((x.i-x.o)*100)/100,e=$(id);
+    e.textContent=(bal<0?"−":"")+fmt(Math.abs(bal));e.className=bal<0?"neg":"";
+    $(ii).textContent="In "+fmt(x.i)+" · Spent "+fmt(x.o);
+  });
+  const r=FX&&FX.r,mv=$("camvr");
+  if(r&&r.MVR&&r.LKR){
+    const tot=(b.USD.i-b.USD.o)*r.MVR+(b.LKR.i-b.LKR.o)*r.MVR/r.LKR;
+    mv.textContent="≈ MVR "+fmt(Math.round(tot*100)/100)+" in total at current rates";
+  }else mv.textContent="";
+  const L=$("calist");L.textContent="";
+  CA.map((x,i)=>({x,i})).sort((p,q)=>String(q.x.d||"").localeCompare(String(p.x.d||""))||q.i-p.i).forEach(({x:r})=>{
+    const c=String(r.cur||"LKR").toUpperCase(),row=mk("div",{className:"car"});
+    row.append(mk("div",{className:"n",textContent:r.n||(r.k==="in"?"Cash in":"Cash spent")}));
+    row.append(mk("div",{className:"v "+(r.k==="in"?"in":"out"),textContent:(r.k==="in"?"+":"−")+c+" "+fmt(num(r.a))+(caEditId===r.id?" ✎":"")}));
+    row.append(caDelBtn(r));
+    row.append(mk("div",{className:"m",textContent:[dlabel(r.d),r.k==="in"?"cash in":"spent",r.t].filter(Boolean).join(" · ")}));
+    row.tabIndex=0;row.setAttribute("role","button");row.onclick=()=>caEdit(r);row.onkeydown=ev=>{if(ev.key==="Enter")caEdit(r)};
+    L.append(row);
+  });
+  $("caempty").style.display=CA.length?"none":"block";
+}
+function caDelBtn(r){
+  const b=mk("button",{className:"ghost hdel",textContent:"🗑"});b.setAttribute("aria-label","Delete entry");let t=null;
+  b.onclick=ev=>{
+    ev.stopPropagation();
+    if(!b.classList.contains("sure")){b.classList.add("sure");b.textContent="Delete?";t=setTimeout(()=>{b.classList.remove("sure");b.textContent="🗑"},3000);return}
+    clearTimeout(t);caDel(r);
+  };
+  return b;
+}
+async function caFlush(){
+  if(caFlushing)return;caFlushing=true;
+  try{
+    while(CAQ.length){
+      const op=CAQ[0];
+      if(op.k==="s")await rpc("cash_save",{p:op.r});else await rpc("cash_delete",{pid:op.id});
+      CAQ.shift();lsSet("caq",CAQ);
+    }
+  }finally{caFlushing=false}
+}
+function caFail(e){
+  const m=String(e.message||e);
+  if(m==="unauthorized"){try{localStorage.removeItem("sb")}catch(x){}SB=null;ready=false;caClose();showSetup("Your session expired. Please log in again.");return}
+  caStat((/Failed to fetch|NetworkError|Load failed/i.test(m)?"No connection – saved on this phone, will sync later":"Not synced: "+m.slice(0,140))+" – tap here to retry",true);
+}
+async function caSync(){
+  caStat(CAQ.length?"Saving…":"Loading…");
+  try{
+    await caFlush();
+    if(CAQ.length){caStat("Saving…");return}
+    const d=await rpc("cash_get");
+    if(!Array.isArray(d))throw new Error("Unexpected reply from the database");
+    if(CAQ.length)return;
+    CA=d;lsSet("ca",CA);caRender();caStat("Synced ✓");
+  }catch(e){caFail(e)}
+}
+function caPush(op){CAQ.push(op);lsSet("caq",CAQ);lsSet("ca",CA);caRender();caStat("Saving…");caFlush().then(()=>{if(!CAQ.length)caStat("Saved ✓")}).catch(caFail)}
+function caSetKind(k){
+  caKind=k;$("cakin").classList.toggle("on",k==="in");$("cakout").classList.toggle("on",k==="out");
+  $("canm").placeholder=k==="in"?"Source (e.g. exchanged at airport)":"What for (e.g. Taxi, Lunch)";
+  caHint();
+}
+function caHint(){
+  const c=$("cacur").value,x=caBal(CA.filter(z=>z.id!==caEditId))[c]||{i:0,o:0},bal=x.i-x.o,a=num($("caamt").value),e=$("cahint");
+  e.textContent="";
+  e.append(document.createTextNode("Cash in hand now: "+c+" "+fmt(bal)));
+  if(a>0){
+    const after=caKind==="in"?bal+a:bal-a;
+    e.append(document.createTextNode("  →  after this: "),mk("b",{textContent:c+" "+(after<0?"−":"")+fmt(Math.abs(after)),style:after<0?"color:var(--bad)":""}));
+  }
+}
+function caFormReset(){
+  caEditId=null;["caamt","canm","cant"].forEach(i=>$(i).value="");$("cad").value=todayISO();
+  $("cah2").textContent="Add cash entry";$("caadd").textContent="Add";$("cacancel").style.display="none";caHint();caRender();
+}
+function caEdit(r){
+  caEditId=r.id;caSetKind(r.k==="in"?"in":"out");
+  $("cacur").value=String(r.cur||"LKR").toUpperCase()==="USD"?"USD":"LKR";$("caamt").value=r.a;$("canm").value=r.n||"";$("cad").value=isoOf(r.d)||todayISO();$("cant").value=r.t||"";
+  $("cah2").textContent="Edit cash entry";$("caadd").textContent="Save changes";$("cacancel").style.display="";
+  caHint();caRender();$("cav").scrollTo({top:0,behavior:"smooth"});
+}
+function caAdd(){
+  const a=num($("caamt").value);
+  if(!(a>0)){toast("Enter the amount");$("caamt").focus();return}
+  const v={d:$("cad").value||todayISO(),k:caKind,cur:$("cacur").value,a:Math.round(a*100)/100,n:$("canm").value.trim(),t:$("cant").value.trim()};
+  const cur=caEditId?CA.find(x=>x.id===caEditId):null;let r,msg;
+  if(cur){Object.assign(cur,v);r=cur;msg="Entry updated"}else{r=Object.assign({id:uid()},v);CA.push(r);msg=v.k==="in"?"Cash added":"Cash spending added"}
+  caPush({k:"s",r:Object.assign({},r)});caFormReset();toast(msg);
+}
+function caDel(r){
+  if(caEditId===r.id)caFormReset();
+  CA=CA.filter(x=>x.id!==r.id);caPush({k:"d",id:r.id});
+  toast("Deleted entry",()=>{
+    const k=CAQ.findIndex(o=>o.k==="d"&&o.id===r.id);
+    if(k>=0&&caFlushing){toast("Too late to undo – please add it again");return}
+    if(k>=0)CAQ.splice(k,1);else CAQ.push({k:"s",r:Object.assign({},r)});
+    lsSet("caq",CAQ);CA.push(r);lsSet("ca",CA);caRender();caFlush().catch(caFail);
+  });
+}
+function caOpen(){
+  $("cav").hidden=false;document.body.style.overflow="hidden";$("cav").scrollTop=0;
+  if(!caEditId)$("cad").value=todayISO();caSetKind(caKind);caRender();caSync();
+  if(typeof fxLoad==="function")fxLoad(false).then(caRender).catch(()=>{});
+  try{history.replaceState(null,"","#cash")}catch(e){}
+}
+function caClose(){
+  $("cav").hidden=true;document.body.style.overflow="";
+  try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
+}
+$("caopen").onclick=caOpen;$("cab").onclick=caClose;$("carf").onclick=caSync;$("cast").onclick=()=>{if($("cast").className==="bad")caSync()};
+$("cakin").onclick=()=>caSetKind("in");$("cakout").onclick=()=>caSetKind("out");
+$("cacur").onchange=caHint;$("caamt").addEventListener("input",caHint);
+$("caadd").onclick=caAdd;$("cacancel").onclick=caFormReset;$("caamt").onkeydown=ev=>{if(ev.key==="Enter")caAdd()};
+$("cav").addEventListener("keydown",ev=>{if(ev.key==="Escape")caClose()});
+
 /* ---------- login screen ---------- */
 function showSetup(msg){
   $("appwrap").hidden=true;$("setup").hidden=false;
@@ -1365,7 +1552,7 @@ function logout(e){
   const msg=un?("You have "+un+" entry(s) not saved to the database yet. Logging out will lose them. Log out anyway?"):"Log out of Income Tracker on this phone? Your data stays safe in your database.";
   if(!confirm(msg))return;
   if(SB&&SB.at){fetch(SB.url+"/auth/v1/logout",{method:"POST",headers:{apikey:SB.key,Authorization:"Bearer "+SB.at}}).catch(()=>{})}
-  ["sb","cache","pend","pendi","eq","pin","pinlen"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
+  ["sb","cache","pend","pendi","eq","pin","pinlen","ca","caq","fp","fpq"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
   PEND=[];PENDI=[];EQ=[];SB=null;ready=false;S=blank();
   $("lock").hidden=true;$("appwrap").hidden=true;showSetup("You are logged out. Enter your password to log in again.");
 }
