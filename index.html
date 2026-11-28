@@ -634,7 +634,6 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
     <small>Cash balance (cash in − cash spent)</small>
     <div class="cab"><div><span>USD</span><b id="cbu">0.00</b><em id="cbui"></em></div><div><span>LKR</span><b id="cbl">0.00</b><em id="cbli"></em></div></div>
     <div class="cam"><span>Cash balance in MVR</span><b id="cbm">–</b><em id="cbmi"></em></div>
-    <div class="carr"><span>Dollar rate: 1 USD =</span><input id="carateh" type="number" step="0.01" inputmode="decimal" aria-label="Sri Lankan rupees per US dollar"><span>LKR</span></div>
     <div id="carsrc"></div>
   </div>
   <div id="cast"></div>
@@ -1588,8 +1587,7 @@ function caValue(list){
   return {sp,rem,lotsMvr:lots.reduce((t,L)=>t+L.m,0),mu,rt};
 }
 function caRateEff(){                       // LKR per 1 USD: your rate > last exchange > live
-  if(num(CAR.v)>0)return {v:num(CAR.v),src:"your rate"};
-  let last=null;CA.forEach(r=>{if(r.k==="ex"&&num(r.r)>0)last=r});
+  let last=null;scoped(CA).slice().sort((a,b)=>String(a.d||"").localeCompare(String(b.d||""))).forEach(r=>{if(r.k==="ex"&&num(r.r)>0)last=r});
   if(last)return {v:num(last.r),src:"last exchange ("+dlabel(last.d)+")"};
   if(FX&&FX.r&&FX.r.LKR)return {v:FX.r.LKR,src:"live market rate"};
   return {v:0,src:""};
@@ -1609,8 +1607,7 @@ function caRender(){
     m.textContent=(tot<0?"−":"")+"MVR "+fmt(Math.abs(tot));m.className=tot<0?"neg":"";
     $("cbmi").textContent="USD part "+fmt(Math.round(u*100)/100)+" + LKR part "+fmt(Math.round(l*100)/100)+" (at your exchange rates) · 1 USD = "+mvrUsd+" MVR";
   }else{m.textContent="–";m.className="";$("cbmi").textContent="Set the dollar rate to see the MVR value."}
-  const ri=$("carateh");if(document.activeElement!==ri)ri.value=rt.v>0?+(+rt.v).toFixed(4):"";
-  $("carsrc").textContent=rt.src?"Rate source: "+rt.src+". Type a new rate to change it; saving an exchange sets it automatically.":"";
+  $("carsrc").textContent=rt.v>0?"Rupee rate used for LKR cash: "+(+rt.v).toFixed(2)+" LKR per USD ("+rt.src+"). Each exchange keeps its own rate.":"";
   const L=$("calist");L.textContent="";
   CAs.map((x,i)=>({x,i})).sort((p,q)=>String(q.x.d||"").localeCompare(String(p.x.d||""))||q.i-p.i).forEach(({x:r})=>{
     const c=String(r.cur||"LKR").toUpperCase(),row=mk("div",{className:"car"});
@@ -1742,7 +1739,6 @@ function caAdd(){
   const cur=caEditId?CA.find(x=>x.id===caEditId):null;let r,msg;
   if(cur){Object.assign(cur,v);r=cur;msg="Entry updated"}
   else{r=Object.assign({id:uid()},v);CA.push(r);msg=v.k==="in"?"Cash added":v.k==="ex"?"Exchange added":"Cash spending added"}
-  if(caKind==="ex"){CAR.v=v.r;lsSet("carate",CAR);msg+=" – dollar rate set to "+v.r}
   caPush({k:"s",r:Object.assign({},r)});caFormReset();toast(msg);
 }
 function caDel(r){
@@ -1772,7 +1768,6 @@ $("cacur").onchange=caHint;
 $("caamt").addEventListener("input",()=>{caExCalc("amt");caHint()});
 $("carate").addEventListener("input",()=>{caExCalc("rate");caHint()});
 $("carecv").addEventListener("input",()=>{caExCalc("recv");caHint()});
-$("carateh").addEventListener("change",()=>{const v=num($("carateh").value);CAR.v=v>0?v:0;lsSet("carate",CAR);caRender();if(caKind==="ex")caSetKind("ex");toast(v>0?"Dollar rate set to "+v+" LKR":"Dollar rate cleared – using last exchange or live rate")});
 $("caadd").onclick=caAdd;$("cacancel").onclick=caFormReset;$("caamt").onkeydown=ev=>{if(ev.key==="Enter")caAdd()};
 $("cav").addEventListener("keydown",ev=>{if(ev.key==="Escape")caClose()});
 
