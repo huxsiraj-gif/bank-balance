@@ -412,7 +412,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 #thub .wrap{max-width:720px;margin:0 auto;padding:0 12px calc(40px + env(safe-area-inset-bottom,0px))}
 .thh{background:linear-gradient(135deg,#0c8f86,#14b5a5);color:#fff;border-radius:0 0 22px 22px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 16px;margin:0 -12px 12px}
 .thh .tr{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px}.thh h1{font-size:18px;margin:0;text-align:center;color:#fff}
-.thh .ghost{color:#fff;background:rgba(255,255,255,.18);border:0}.thh small{display:block;margin-top:10px;opacity:.9}.thh b{display:block;font-size:26px;margin:2px 0}.thh em{font-style:normal;font-size:12.5px;opacity:.92}
+.thh .ghost{color:#fff;background:rgba(255,255,255,.18);border:0}.thh #thpin{font-size:18px;padding:6px 10px;opacity:.55}.thh #thpin.on{opacity:1;background:rgba(255,255,255,.38)}.thh small{display:block;margin-top:10px;opacity:.9}.thh b{display:block;font-size:26px;margin:2px 0}.thh em{font-style:normal;font-size:12.5px;opacity:.92}
 .thp{grid-template-columns:1fr}.thp .pg{min-height:56px;font-size:16px!important;justify-content:flex-start;text-align:left;padding:10px 16px}
 #dtrips{grid-template-columns:1fr}
 #dtrips .dtt{font-size:12px;font-weight:700;color:var(--mute);text-transform:uppercase;letter-spacing:.04em;margin:0 2px}
@@ -581,7 +581,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <!-- Card Transactions: separate page, not linked to any other entry -->
 <div id="thub" hidden role="dialog" aria-modal="true" aria-label="Trip">
 <div class="wrap">
-  <div class="thh"><div class="tr"><button class="ghost" id="thb" aria-label="Back to dashboard">‹ Back</button><h1 id="tht">Trip</h1><span></span></div>
+  <div class="thh"><div class="tr"><button class="ghost" id="thb" aria-label="Back to dashboard">‹ Back</button><h1 id="tht">Trip</h1><button class="ghost" id="thpin" aria-label="Pin to dashboard">📌</button></div>
     <small id="thd"></small><b id="thT"></b><em id="thi"></em></div>
   <div class="pages thp"><button id="fpopen" class="pg">💳 Card Transactions</button><button id="caopen" class="pg">💵 Daily Expenses</button><button id="tropen" class="pg wide">🧳 Trip Summary</button></div>
   <div class="card" id="cvcard">
@@ -1794,6 +1794,7 @@ $("caadd").onclick=caAdd;$("cacancel").onclick=caFormReset;$("caamt").onkeydown=
 $("cav").addEventListener("keydown",ev=>{if(ev.key==="Escape")caClose()});
 
 /* ---------- Trips (Settings): country, dates, opening cash ---------- */
+let PINS=lsGet("tpins")||{};
 let TRIPS=lsGet("trips")||[],TPQ=lsGet("tpq")||[],tpFlushing=false,tpEdit=null,tpSure=false;
 function tpLinked(id){return TRIPS.some(t=>t.cash&&Object.keys(t.cash).some(c=>t.cash[c]&&t.cash[c].id===id))}
 let CAOK=false,TPOK=false;
@@ -1822,10 +1823,8 @@ function tpRender(){
   const act=activeTrip();
   TRIPS.slice().sort((a,b)=>String(b.d1||"").localeCompare(String(a.d1||""))).forEach(t=>{
     const row=mk("div",{className:"tpr"});row.tabIndex=0;row.setAttribute("role","button");
-    row.append(mk("div",{className:"n",textContent:"🧳 "+tripName(t)}));
-    const a=mk("div",{className:"act"});
-    if(act&&act.id===t.id)a.append(mk("span",{className:"chip2",textContent:"Active"}));
-    else{const b=mk("button",{className:"ghost use",textContent:"Use"});b.onclick=ev=>{ev.stopPropagation();try{localStorage.setItem("tripact",t.id)}catch(e){}tpRender();trRender();toast("Active trip: "+tripName(t))};a.append(b)}
+    row.append(mk("div",{className:"n",textContent:"🧳 "+tripName(t)+(isPinned(t)?"  📌":"")}));
+    const a=mk("div",{className:"act"}),ob=mk("button",{className:"ghost use",textContent:"Open ›"});ob.onclick=ev=>{ev.stopPropagation();thOpen(t.id)};a.append(ob);
     row.append(a,mk("div",{className:"m",textContent:dlabel(t.d1)+" → "+dlabel(t.d2)+" · cash: "+tpCashText(t)}));
     row.onclick=()=>tpOpen(t);row.onkeydown=ev=>{if(ev.key==="Enter")tpOpen(t)};
     L.append(row);
@@ -2039,23 +2038,27 @@ $("tropen").onclick=trOpen;$("trb2").onclick=trClose;$("trrf").onclick=trSync;
 $("trv").addEventListener("keydown",ev=>{if(ev.key==="Escape")trClose()});
 
 /* ---------- dashboard Trips list + trip hub ---------- */
+function isPinned(t){return PINS[t.id]!==0}
+function thPinToggle(){const t=scopeTrip();if(!t)return;PINS[t.id]=isPinned(t)?0:1;lsSet("tpins",PINS);dtRender();tpRender();thRender();toast(isPinned(t)?"Pinned to the dashboard":"Unpinned – open it from Settings → Trips")}
 function dtRender(){
   const D=$("dtrips");if(!D)return;D.textContent="";
   D.append(mk("div",{className:"dtt",textContent:"Trips"}));
   const today=todayISO();
-  TRIPS.slice().sort((a,b)=>String(b.d1).localeCompare(String(a.d1))).forEach(t=>{
+  TRIPS.filter(isPinned).sort((a,b)=>String(b.d1).localeCompare(String(a.d1))).forEach(t=>{
     const X=trCalc(t),b=mk("button",{className:"pg"});
     b.append(mk("b",{textContent:"🧳 "+tripName(t)}),mk("span",{textContent:dlabel(t.d1)+" → "+dlabel(t.d2)+" · MVR "+fmt(Math.round(X.total*100)/100)+" spent"}),
       mk("i",{textContent:t.d2<today?"Finished ›":t.d1>today?"Upcoming ›":"In progress ›"}));
     b.onclick=()=>thOpen(t.id);D.append(b);
   });
   if(!TRIPS.length)D.append(mk("p",{className:"mute sm",textContent:"No trips yet. Create one in Settings → Trips."}));
+  else if(!TRIPS.some(isPinned))D.append(mk("p",{className:"mute sm",textContent:"No pinned trips. Open a trip from Settings → Trips and tap 📌 to pin it here."}));
   if(TRIPS.length>1){const ab=mk("button",{className:"pg",textContent:"All trips together"});ab.style.textAlign="center";ab.onclick=()=>thOpen("all");D.append(ab)}
 }
 function thRender(){
   const t=scopeTrip();if(!t&&$("thub").hidden)return;
   const today=todayISO();
   $("tht").textContent=t?"🧳 "+tripName(t):"🧳 All trips";
+  {const pb=$("thpin");pb.style.display=t?"":"none";pb.classList.toggle("on",!!t&&isPinned(t));pb.title=t&&isPinned(t)?"Pinned – tap to unpin":"Pin to dashboard"}
   if(t){const X=trCalc(t);
     $("thd").textContent=dlabel(t.d1)+" → "+dlabel(t.d2)+" · "+(t.d2<today?"finished":t.d1>today?"starts in "+trDiff(today,t.d1)+" days":"day "+(trDiff(t.d1,today)+1)+" of "+(trDiff(t.d1,t.d2)+1));
     $("thT").textContent="MVR "+fmt(Math.round(X.total*100)/100);$("thi").textContent="Card "+fmt(Math.round(X.card*100)/100)+" · Cash "+fmt(Math.round(X.cash*100)/100)+" · opening cash: "+tpCashText(t)}
@@ -2066,7 +2069,7 @@ function thOpen(id){
   $("thub").hidden=false;document.body.style.overflow="hidden";thRender();tpRender();try{fxLoad(false)}catch(e){}cvMode();
 }
 function thClose(){$("thub").hidden=true;document.body.style.overflow=""}
-$("thb").onclick=thClose;$("thub").addEventListener("keydown",ev=>{if(ev.key==="Escape"&&$("fpv").hidden&&$("cav").hidden&&$("trv").hidden)thClose()});
+$("thb").onclick=thClose;$("thpin").onclick=thPinToggle;$("thub").addEventListener("keydown",ev=>{if(ev.key==="Escape"&&$("fpv").hidden&&$("cav").hidden&&$("trv").hidden)thClose()});
 dtRender();
 /* ---------- phone Back button / swipe: close the open page or sheet instead of leaving the app ---------- */
 const NAVO=[["mv",()=>mvClose()],["ed",()=>closeEdit()],["tsh",()=>tpClose()],["dt",()=>closeDetail()],["cav",()=>caClose()],["fpv",()=>fpClose()],["trv",()=>trClose()],["thub",()=>thClose()]];
@@ -2112,7 +2115,7 @@ function logout(e){
   const msg=un?("You have "+un+" entry(s) not saved to the database yet. Logging out will lose them. Log out anyway?"):"Log out of Income Tracker on this phone? Your data stays safe in your database.";
   if(!confirm(msg))return;
   if(SB&&SB.at){fetch(SB.url+"/auth/v1/logout",{method:"POST",headers:{apikey:SB.key,Authorization:"Bearer "+SB.at}}).catch(()=>{})}
-  ["sb","cache","pend","pendi","eq","pin","pinlen","ca","caq","carate","trip","trips","tpq","tripact","fp","fpq"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
+  ["sb","cache","pend","pendi","eq","pin","pinlen","ca","caq","carate","trip","trips","tpq","tripact","tpins","caclosed","fp","fpq"].forEach(k=>{try{localStorage.removeItem(k)}catch(x){}});
   PEND=[];PENDI=[];EQ=[];SB=null;ready=false;S=blank();
   $("lock").hidden=true;$("appwrap").hidden=true;showSetup("You are logged out. Enter your password to log in again.");
 }
