@@ -577,6 +577,19 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
   <div class="thh"><div class="tr"><button class="ghost" id="thb" aria-label="Back to dashboard">‹ Back</button><h1 id="tht">Trip</h1><span></span></div>
     <small id="thd"></small><b id="thT"></b><em id="thi"></em></div>
   <div class="pages thp"><button id="fpopen" class="pg">🌍 Foreign Purchases</button><button id="caopen" class="pg">💵 Cash in Hand</button><button id="tropen" class="pg wide">🧳 Trip Summary</button></div>
+  <div class="card" id="cvcard">
+    <h2>Currency converter</h2>
+    <div class="seg cvs"><button id="cvlive" class="on">Live rates</button><button id="cvman">Manual rates</button></div>
+    <div class="f" id="cvmw" style="display:none">
+      <div><label for="cvxl">1 USD = ? LKR</label><input id="cvxl" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 300"></div>
+      <div><label for="cvxm">1 USD = ? MVR</label><input id="cvxm" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 15.42"></div>
+    </div>
+    <div class="cvr"><b>USD</b><input id="cvu" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="US dollars"></div>
+    <div class="cvr"><b>LKR</b><input id="cvl" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Sri Lankan rupees"></div>
+    <div class="cvr"><b>MVR</b><input id="cvm" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Maldivian rufiyaa"></div>
+    <div class="mute sm" id="cvn"></div>
+    <button id="cvuse" class="ghost" style="width:100%;margin-top:4px">Use LKR + MVR in a new foreign purchase →</button>
+  </div>
   <p class="mute sm" style="text-align:center">Everything in these three pages shows only this trip.</p>
 </div></div>
 <div id="fpv" hidden role="dialog" aria-modal="true" aria-label="Foreign purchases">
@@ -604,19 +617,6 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
       <button id="fpadd" class="w">Add foreign purchase</button>
       <button id="fpcancel" class="w ghost" style="display:none">Cancel editing</button>
     </div>
-  </div>
-  <div class="card" id="cvcard">
-    <h2>Currency converter</h2>
-    <div class="seg cvs"><button id="cvlive" class="on">Live rates</button><button id="cvman">Manual rates</button></div>
-    <div class="f" id="cvmw" style="display:none">
-      <div><label for="cvxl">1 USD = ? LKR</label><input id="cvxl" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 300"></div>
-      <div><label for="cvxm">1 USD = ? MVR</label><input id="cvxm" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 15.42"></div>
-    </div>
-    <div class="cvr"><b>USD</b><input id="cvu" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="US dollars"></div>
-    <div class="cvr"><b>LKR</b><input id="cvl" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Sri Lankan rupees"></div>
-    <div class="cvr"><b>MVR</b><input id="cvm" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Maldivian rufiyaa"></div>
-    <div class="mute sm" id="cvn"></div>
-    <button id="cvuse" class="ghost" style="width:100%;margin-top:4px">Use LKR + MVR in a new purchase ↑</button>
   </div>
   <div class="card"><h2>Purchases</h2><div id="fpl2"></div><p class="mute" id="fpe" style="display:none">No foreign purchases yet.</p></div>
   <p class="mute sm" style="text-align:center">Exchange rates: <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">ExchangeRate-API</a> (mid-market, refreshed once a day by the provider). Your bank's own rate is what counts for your entries.</p>
@@ -1466,7 +1466,7 @@ Object.keys(CVK).forEach(id=>$(id).addEventListener("input",()=>{cvLast=id;cvCal
 $("cvuse").onclick=()=>{
   const l=num($("cvl").value),m=num($("cvm").value);
   if(!(l>0&&m>0)){toast("Enter an amount in the converter first");return}
-  if(fpEditId)fpFormReset();
+  fpOpen();if(fpEditId)fpFormReset();
   $("fpc").value="LKR";$("fpo").value=l.toFixed(2);$("fpbm").value=m.toFixed(2);fpCalc();
   $("fpv").scrollTo({top:0,behavior:"smooth"});toast("Filled in the form – add the bank details and save");
 };
@@ -2022,7 +2022,7 @@ function thRender(){
 }
 function thOpen(id){
   try{if(id==="all")localStorage.setItem("scope","all");else{localStorage.setItem("scope","");localStorage.setItem("tripact",id)}}catch(e){}
-  $("thub").hidden=false;document.body.style.overflow="hidden";thRender();tpRender();
+  $("thub").hidden=false;document.body.style.overflow="hidden";thRender();tpRender();try{fxLoad(false)}catch(e){}cvMode();
 }
 function thClose(){$("thub").hidden=true;document.body.style.overflow=""}
 $("thb").onclick=thClose;$("thub").addEventListener("keydown",ev=>{if(ev.key==="Escape"&&$("fpv").hidden&&$("cav").hidden&&$("trv").hidden)thClose()});
