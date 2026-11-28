@@ -421,6 +421,11 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 .car.exch .v{grid-column:1/3;grid-row:2;text-align:left;white-space:normal;font-size:14px}
 .car.exch .hdel{grid-row:1}.car.exch .m{grid-column:1/3;grid-row:3}
 .car .n{min-width:0}
+
+.cbar{display:grid;grid-template-columns:92px 1fr auto;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.cbar .bn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cbar .bt{height:12px;border-radius:99px;background:var(--chip);overflow:hidden}
+.cbar .bt i{display:block;height:100%;border-radius:99px}.cbar .bv{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.cbar .bp{display:block;font-size:11px;font-weight:500;color:var(--mute)}
 </style>
 </head>
 <body>
@@ -610,6 +615,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
       <div><label for="fpd">Date</label><input id="fpd" type="date"></div>
       <div><label for="fpc">Currency</label><input id="fpc" list="fpcl" value="LKR" autocapitalize="characters" autocomplete="off"><datalist id="fpcl"><option>LKR</option><option>USD</option><option>EUR</option><option>GBP</option><option>SGD</option><option>INR</option><option>AED</option></datalist></div>
       <input id="fpname" class="w" placeholder="What / where (e.g. Amazon, Hotel)" autocomplete="off">
+      <div class="w"><label for="fpcat">Category</label><select id="fpcat" aria-label="Category"></select></div>
       <div><label for="fpo">Amount in foreign currency</label><input id="fpo" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
       <div><label for="fpbm">Bank deducted (MVR) – optional</label><input id="fpbm" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
       <div id="fpcalc">Only the foreign amount is needed now. Add the bank deduction later when it shows in your bank.</div>
@@ -647,6 +653,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
       <div id="cacurw"><label for="cacur">Currency</label><select id="cacur"><option>LKR</option><option>USD</option></select></div>
       <div><label for="caamt" id="caamtl">Amount</label><input id="caamt" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
       <input id="canm" class="w" placeholder="What for (e.g. Taxi, Lunch)" autocomplete="off">
+      <div class="w" id="cacatw"><label for="cacat">Category</label><select id="cacat" aria-label="Category"></select></div>
       <div id="caexw" class="w" style="display:none"><div class="f" style="margin-top:0"><div><label for="carate">Rate (LKR per 1 USD)</label><input id="carate" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 332.50"></div><div><label for="carecv">LKR received</label><input id="carecv" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div></div></div>
       <div><label for="cad">Date</label><input id="cad" type="date"></div>
       <div><label for="cant">Note</label><input id="cant" placeholder="optional" autocomplete="off"></div>
@@ -672,7 +679,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
     <div id="trbud"></div>
   </div>
   <div id="trst"></div>
-  <div class="card" id="trdash"><h2>Trip dashboard</h2><div class="dgrid" id="trdg"></div><div id="trsplit"></div><div class="dh">Spending by day</div><div class="dchart" id="trchart"></div></div>
+  <div class="card" id="trdash"><h2>Trip dashboard</h2><div class="dgrid" id="trdg"></div><div id="trsplit"></div><div class="dh">Spending by day</div><div class="dchart" id="trchart"></div><div class="dh" id="trcath">Spending by category</div><div id="trcat"></div></div>
   <div class="card" id="trall" style="display:none"><h2>All trips</h2><div id="tralll"></div></div>
   <div class="card" id="trinfo" style="display:none"><h2>Trip</h2><div id="trinfob"></div><p class="mute sm">Change the country, dates or cash in Settings → Trips.</p></div>
   <div class="card" id="trset">
@@ -1349,7 +1356,7 @@ function fpRender(){
     row.append(mk("div",{className:"o",textContent:c+" "+fmt(num(r.o))+(fpEditId===r.id?"  ✎":"")}));
     const x=mk("button",{className:"ghost x",textContent:"✕"});x.setAttribute("aria-label","Delete "+(r.n||"transaction"));x.onclick=ev=>{ev.stopPropagation();fpDel(r)};row.append(x);
     row.classList.add("tap");row.tabIndex=0;row.setAttribute("role","button");row.setAttribute("aria-label","Edit "+(r.n||"transaction"));row.onclick=()=>fpEdit(r);row.onkeydown=ev=>{if(ev.key==="Enter")fpEdit(r)};
-    row.append(mk("div",{className:"m",textContent:[dlabel(r.d),r.bk,rt?"rate "+rt.toFixed(4):"",r.t].filter(Boolean).join(" · ")}));
+    row.append(mk("div",{className:"m",textContent:[dlabel(r.d),r.c,r.bk,rt?"rate "+rt.toFixed(4):"",r.t].filter(Boolean).join(" · ")}));
     row.append(mk("div",{className:"b"+(num(r.b)>0?"":" wait"),textContent:num(r.b)>0?"−MVR "+fmt(num(r.b)):"Awaiting bank"}));
     const act=mk("div",{className:"act"});
     if(fpLinked(r))act.append(mk("span",{className:"lk",textContent:"✓ In Expenses (Foreign)"}));
@@ -1507,9 +1514,10 @@ function mvApprove(){
 $("mvx").onclick=mvClose;$("mvno").onclick=mvClose;$("mvok").onclick=mvApprove;
 $("mv").addEventListener("click",ev=>{if(ev.target===$("mv"))mvClose()});
 
+["fpcat","cacat"].forEach(id=>{const e=$(id);e.append(mk("option",{value:"",textContent:"– Category (optional) –"}));CATS.forEach(c=>e.append(mk("option",{value:c,textContent:c})))});
 function fpFormReset(){
   fpEditId=null;
-  ["fpname","fpo","fpbm","fpt","fpbk"].forEach(i=>$(i).value="");$("fpd").value=todayISO();$("fpc").value="LKR";
+  ["fpname","fpo","fpbm","fpt","fpbk"].forEach(i=>$(i).value="");$("fpcat").value="";$("fpd").value=todayISO();$("fpc").value="LKR";
   $("fph2").textContent="New card transaction";$("fpadd").textContent="Add card transaction";$("fpcancel").style.display="none";
   fpCalc();fxRender();fpRender();
 }
@@ -1517,7 +1525,7 @@ function fpEdit(r){
   if(fpLinked(r)){toast("Already moved to Expenses – edit it in History");return}
   fpEditId=r.id;
   $("fpd").value=isoOf(r.d)||todayISO();$("fpc").value=String(r.cur||"LKR").toUpperCase();$("fpname").value=r.n||"";
-  $("fpo").value=r.o;$("fpbm").value=r.b;$("fpbk").value=r.bk||"";$("fpt").value=r.t||"";
+  $("fpo").value=r.o;$("fpbm").value=r.b;$("fpbk").value=r.bk||"";$("fpt").value=r.t||"";$("fpcat").value=r.c||"";
   $("fph2").textContent="Edit card transaction";$("fpadd").textContent="Save changes";$("fpcancel").style.display="";
   fpCalc();fxRender();fpRender();
   $("fpv").scrollTo({top:0,behavior:"smooth"});
@@ -1526,7 +1534,7 @@ function fpEdit(r){
 function fpAdd(){
   const o=num($("fpo").value),b=num($("fpbm").value);
   if(o<=0){toast("Enter the amount in the foreign currency");$("fpo").focus();return}
-  const v={d:$("fpd").value||todayISO(),n:$("fpname").value.trim(),cur:($("fpc").value||"LKR").trim().toUpperCase()||"LKR",o:Math.round(o*100)/100,b:b>0?Math.round(b*100)/100:0,bk:$("fpbk").value.trim(),t:$("fpt").value.trim()};
+  const v={d:$("fpd").value||todayISO(),n:$("fpname").value.trim(),cur:($("fpc").value||"LKR").trim().toUpperCase()||"LKR",o:Math.round(o*100)/100,b:b>0?Math.round(b*100)/100:0,bk:$("fpbk").value.trim(),t:$("fpt").value.trim(),c:$("fpcat").value};
   const cur=fpEditId?FP.find(x=>x.id===fpEditId):null;
   let r,msg;
   if(cur){Object.assign(cur,v);r=cur;msg="Card transaction updated"}
@@ -1625,7 +1633,7 @@ function caRender(){
       row.append(mk("div",{className:"n",textContent:r.n||(r.k==="in"?"Cash in":"Cash spent")}));
       row.append(mk("div",{className:"v "+(r.k==="in"?"in":"out"),textContent:(r.k==="in"?"+":"−")+c+" "+fmt(num(r.a))+ed}));
       row.append(caDelBtn(r));
-      row.append(mk("div",{className:"m",textContent:[dlabel(r.d),r.k==="in"?"cash in":"spent"+(V.sp[r.id]>0?" ≈ MVR "+fmt(Math.round(V.sp[r.id]*100)/100):""),r.t].filter(Boolean).join(" · ")}));
+      row.append(mk("div",{className:"m",textContent:[dlabel(r.d),r.k==="in"?"cash in":(r.c?r.c+" · ":"")+"spent"+(V.sp[r.id]>0?" ≈ MVR "+fmt(Math.round(V.sp[r.id]*100)/100):""),r.t].filter(Boolean).join(" · ")}));
     }
     row.tabIndex=0;row.setAttribute("role","button");row.onclick=()=>caEdit(r);row.onkeydown=ev=>{if(ev.key==="Enter")caEdit(r)};
     L.append(row);
@@ -1686,7 +1694,7 @@ function caPush(op){if(op.k==="s")scopeWarn(op.r.d);CAQ.push(op);lsSet("caq",CAQ
 function caSetKind(k){
   caKind=k;["in","out","ex"].forEach(x=>$("ca"+(x==="in"?"kin":x==="out"?"kout":"kex")).classList.toggle("on",k===x));
   const ex=k==="ex";
-  $("cacurw").style.display=ex?"none":"";$("caexw").style.display=ex?"":"none";
+  $("cacurw").style.display=ex?"none":"";$("cacatw").style.display=k==="out"?"":"none";$("caexw").style.display=ex?"":"none";
   $("caamtl").textContent=ex?"Dollars given (USD)":"Amount";
   $("canm").placeholder=k==="in"?"Source (e.g. brought from home)":ex?"Where (e.g. airport, money changer)":"What for (e.g. Taxi, Lunch)";
   if(ex&&!(num($("carate").value)>0)){const rt=caRateEff();if(rt.v>0)$("carate").value=+(+rt.v).toFixed(4)}
@@ -1716,13 +1724,13 @@ function caHint(){
   }
 }
 function caFormReset(){
-  caEditId=null;["caamt","canm","cant","carecv"].forEach(i=>$(i).value="");$("carate").value="";$("cad").value=todayISO();$("cacur").value="LKR";
+  caEditId=null;["caamt","canm","cant","carecv"].forEach(i=>$(i).value="");$("cacat").value="";$("carate").value="";$("cad").value=todayISO();$("cacur").value="LKR";
   $("cah2").textContent="Add cash entry";$("caadd").textContent="Add";$("cacancel").style.display="none";
   caSetKind(caKind);caRender();
 }
 function caEdit(r){
   caEditId=r.id;caSetKind(r.k==="ex"?"ex":r.k==="in"?"in":"out");
-  $("cad").value=isoOf(r.d)||todayISO();$("canm").value=r.n||"";$("cant").value=r.t||"";$("caamt").value=r.a;
+  $("cad").value=isoOf(r.d)||todayISO();$("canm").value=r.n||"";$("cant").value=r.t||"";$("caamt").value=r.a;$("cacat").value=r.c||"";
   if(r.k==="ex"){$("carate").value=r.r;$("carecv").value=r.ta}
   else $("cacur").value=String(r.cur||"LKR").toUpperCase()==="USD"?"USD":"LKR";
   $("cah2").textContent="Edit cash entry";$("caadd").textContent="Save changes";$("cacancel").style.display="";
@@ -1731,7 +1739,7 @@ function caEdit(r){
 function caAdd(){
   const a=num($("caamt").value);
   if(!(a>0)){toast(caKind==="ex"?"Enter the dollars you changed":"Enter the amount");$("caamt").focus();return}
-  const v={d:$("cad").value||todayISO(),k:caKind,n:$("canm").value.trim(),t:$("cant").value.trim(),a:Math.round(a*100)/100,to:null,ta:null,r:null};
+  const v={d:$("cad").value||todayISO(),k:caKind,n:$("canm").value.trim(),t:$("cant").value.trim(),a:Math.round(a*100)/100,to:null,ta:null,r:null,c:caKind==="out"?$("cacat").value:""};
   let rate=0;
   if(caKind==="ex"){
     const avail=caBal(scoped(CA).filter(z=>z.id!==caEditId)).USD.bal;
@@ -1887,24 +1895,24 @@ function trRange(at0){
 function trCalc(at0){
   const R=trRange(at0),today=todayISO(),inR=d=>{d=isoOf(d)||"";return d&&(R.at?inTrip(R.at,d):(!R.s||d>=R.s)&&(!R.e||d<=R.e))};
   const V=caValue(CA.filter(r=>inTrip(R.at||{d1:R.s,d2:R.e},r.d))),days={},src={};let card=0,cash=0,nCard=0,nCash=0,pend=0,nPend=0;
-  const cardCur={},cashCur={};let big=null,ex={usd:0,lkr:0,n:0};const bigC=(n,v)=>{if(!big||v>big.v)big={n:n||"(no name)",v:v}};
+  const cardCur={},cashCur={},cats={},addCat=(c,v)=>{const k=c||"Uncategorised";cats[k]=(cats[k]||0)+v};let big=null,ex={usd:0,lkr:0,n:0};const bigC=(n,v)=>{if(!big||v>big.v)big={n:n||"(no name)",v:v}};
   const day=d=>days[d]||(days[d]={card:0,cash:0});
   FP.forEach(r=>{
     if(!inR(r.d))return;const d=isoOf(r.d),c=String(r.cur||"LKR").toUpperCase();
-    if(num(r.b)>0){bigC(r.n,num(r.b));card+=num(r.b);nCard++;day(d).card+=num(r.b);cardCur[c]=(cardCur[c]||0)+num(r.o)}
+    if(num(r.b)>0){addCat(r.c,num(r.b));bigC(r.n,num(r.b));card+=num(r.b);nCard++;day(d).card+=num(r.b);cardCur[c]=(cardCur[c]||0)+num(r.o)}
     else if(num(r.o)>0){const m=c==="MVR"?1:fxCross(c,"MVR");if(m)pend+=num(r.o)*m;nPend++}
   });
   CA.forEach(r=>{
     if(r.k==="ex"&&inR(r.d)){ex.usd+=num(r.a);ex.lkr+=num(r.ta);ex.n++}
     if(r.k!=="out"||!inR(r.d))return;const d=isoOf(r.d),c=String(r.cur||"LKR").toUpperCase(),v=V.sp[r.id]||0;
-    bigC(r.n,v);cash+=v;nCash++;day(d).cash+=v;cashCur[c]=(cashCur[c]||0)+num(r.a);
+    addCat(r.c,v);bigC(r.n,v);cash+=v;nCash++;day(d).cash+=v;cashCur[c]=(cashCur[c]||0)+num(r.a);
     const k=r.n?r.n.trim():"(no name)";const y=src[k]||(src[k]={v:0,n:0});y.v+=v;y.n++;
   });
   FP.forEach(r=>{if(!inR(r.d)||!(num(r.b)>0))return;const k=r.n?r.n.trim():"(no name)",y=src[k]||(src[k]={v:0,n:0});y.v+=num(r.b);y.n++});
   const total=Math.round((card+cash)*100)/100,dates=Object.keys(days).sort();
   const start=R.s||dates[0]||today,end=R.e&&R.e<today?R.e:today;
   const nDays=start>today?1:Math.max(1,trDiff(start,end<start?start:end)+1);
-  return {big,ex,R,card,cash,total,nCard,nCash,pend,nPend,cardCur,cashCur,days,dates,start,end,nDays,src};
+  return {cats,big,ex,R,card,cash,total,nCard,nCash,pend,nPend,cardCur,cashCur,days,dates,start,end,nDays,src};
 }
 function trRender(){
   if(!$("trv"))return;
@@ -1964,6 +1972,16 @@ function trRender(){
       const u=mk("u"),w=mk("s");u.style.height=(x.card/mx*72)+"px";u.style.background="#4c7bd9";w.style.height=(x.cash/mx*72)+"px";c.append(w,u,document.createTextNode(d.slice(8)));ch.append(c)});
     if(!T.dates.length)ch.append(mk("span",{className:"mute sm",textContent:"No spending yet."}));
     $("trdash").querySelector(".dh").style.display=T.dates.length?"":"none";
+    {
+      const C=$("trcat");C.textContent="";const ks=Object.keys(T.cats).sort((a,b)=>T.cats[b]-T.cats[a]),tot=ks.reduce((t,k)=>t+T.cats[k],0);
+      $("trcath").style.display=ks.length?"":"none";
+      ks.forEach(k=>{const v=T.cats[k],ci=CATS.indexOf(k),row=mk("div",{className:"cbar"}),bt=mk("div",{className:"bt"}),f=mk("i");
+        f.style.width=(tot>0?v/tot*100:0).toFixed(1)+"%";f.style.background=ci>=0?COLORS[ci]:"#9aa8b0";bt.append(f);
+        const bv=mk("div",{className:"bv",textContent:"MVR "+fmt(r2(v))});bv.append(mk("span",{className:"bp",textContent:(tot>0?Math.round(v/tot*100):0)+"%"}));
+        row.append(mk("div",{className:"bn",textContent:k}),bt,bv);C.append(row)});
+      if(T.cats.Uncategorised)C.append(mk("p",{className:"mute sm",textContent:"Add a category to card and cash entries to see them split here."}));
+    }
+
   }
   {
     const al=$("tralll");al.textContent="";$("trall").style.display=TRIPS.length>1?"":"none";
