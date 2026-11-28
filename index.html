@@ -730,6 +730,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 <script>
 const CATS=["Bills","Food","Shop","Hotel","Transport","Fuel","Health","Withdrawal","Transfer","Foreign","Other"];
 const COLORS=["#0b8f86","#e0a526","#6a7be0","#e0645a","#58b368","#a35fc7","#7a8b99","#d96aa0","#8d6e4f","#3ab0d9","#e07b39"];
+const TCATS=CATS.concat(["Shopping","Film","Breakfast","Lunch","Dinner"]),TCOLORS=COLORS.concat(["#c9528a","#5b6cc4","#e8b23c","#3f9d6b","#8a5fd0"]);
 const KEYS=["c1","c2","c3","c6","c5"];
 function blank(){return {bank:0,income:0,budget:0,end:24,rlkr:0.05,rusd:15.42,exp:[],inc:[],up:[],closed:{}}}
 let S=blank(),PEND=[],PENDI=[],EQ=[],ready=false,saving=false,unsaved=false,timer=null,lastLoad=0,curMon=null,q="",tab="",hiddenAt=0,tt=null;
@@ -1514,7 +1515,7 @@ function mvApprove(){
 $("mvx").onclick=mvClose;$("mvno").onclick=mvClose;$("mvok").onclick=mvApprove;
 $("mv").addEventListener("click",ev=>{if(ev.target===$("mv"))mvClose()});
 
-["fpcat","cacat"].forEach(id=>{const e=$(id);e.append(mk("option",{value:"",textContent:"– Category (optional) –"}));CATS.forEach(c=>e.append(mk("option",{value:c,textContent:c})))});
+["fpcat","cacat"].forEach(id=>{const e=$(id);e.append(mk("option",{value:"",textContent:"– Category (optional) –"}));TCATS.forEach(c=>e.append(mk("option",{value:c,textContent:c})))});
 function fpFormReset(){
   fpEditId=null;
   ["fpname","fpo","fpbm","fpt","fpbk"].forEach(i=>$(i).value="");$("fpcat").value="";$("fpd").value=todayISO();$("fpc").value="LKR";
@@ -1975,8 +1976,8 @@ function trRender(){
     {
       const C=$("trcat");C.textContent="";const ks=Object.keys(T.cats).sort((a,b)=>T.cats[b]-T.cats[a]),tot=ks.reduce((t,k)=>t+T.cats[k],0);
       $("trcath").style.display=ks.length?"":"none";
-      ks.forEach(k=>{const v=T.cats[k],ci=CATS.indexOf(k),row=mk("div",{className:"cbar"}),bt=mk("div",{className:"bt"}),f=mk("i");
-        f.style.width=(tot>0?v/tot*100:0).toFixed(1)+"%";f.style.background=ci>=0?COLORS[ci]:"#9aa8b0";bt.append(f);
+      ks.forEach(k=>{const v=T.cats[k],ci=TCATS.indexOf(k),row=mk("div",{className:"cbar"}),bt=mk("div",{className:"bt"}),f=mk("i");
+        f.style.width=(tot>0?v/tot*100:0).toFixed(1)+"%";f.style.background=ci>=0?TCOLORS[ci]:"#9aa8b0";bt.append(f);
         const bv=mk("div",{className:"bv",textContent:"MVR "+fmt(r2(v))});bv.append(mk("span",{className:"bp",textContent:(tot>0?Math.round(v/tot*100):0)+"%"}));
         row.append(mk("div",{className:"bn",textContent:k}),bt,bv);C.append(row)});
       if(T.cats.Uncategorised)C.append(mk("p",{className:"mute sm",textContent:"Add a category to card and cash entries to see them split here."}));
