@@ -594,7 +594,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
       <div><label for="cvxm">1 USD = ? MVR</label><input id="cvxm" type="number" step="0.01" inputmode="decimal" placeholder="e.g. 15.42"></div>
     </div>
     <div class="cvr"><b>USD</b><input id="cvu" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="US dollars"></div>
-    <div class="cvr"><b>LKR</b><input id="cvl" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Sri Lankan rupees"></div>
+    <div class="cvr"><b id="cvlab">LKR</b><input id="cvl" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Sri Lankan rupees"></div>
     <div class="cvr"><b>MVR</b><input id="cvm" type="number" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Maldivian rufiyaa"></div>
     <div class="mute sm" id="cvn"></div>
     <button id="cvuse" class="ghost" style="width:100%;margin-top:4px">Use LKR + MVR in a new card transaction →</button>
@@ -644,7 +644,7 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
     <div class="tr"><button class="ghost" id="cab" aria-label="Back to dashboard">‹ Back</button><h1>💵 Daily Expenses</h1><button class="ghost pinb" id="capin" aria-label="Pin to dashboard">📌</button><button class="ghost" id="carf" aria-label="Refresh">↻</button></div>
     <select id="catrip" aria-label="Trip" style="max-width:100%;margin-bottom:6px"></select>
     <small>Cash balance (cash in − cash spent)</small>
-    <div class="cab"><div><span>USD</span><b id="cbu">0.00</b><em id="cbui"></em></div><div><span>LKR</span><b id="cbl">0.00</b><em id="cbli"></em></div></div>
+    <div class="cab"><div><span>USD</span><b id="cbu">0.00</b><em id="cbui"></em></div><div><span id="cbll">LKR</span><b id="cbl">0.00</b><em id="cbli"></em></div></div>
     <div class="cam"><span>Cash balance in MVR</span><b id="cbm">–</b><em id="cbmi"></em></div>
     <div id="carsrc"></div>
   </div>
@@ -701,12 +701,13 @@ button{transition:transform .12s ease}button:active{transform:scale(.96)}
 </div>
 <div id="tsh" hidden><div class="dtbox" role="dialog" aria-modal="true" aria-labelledby="tpt"><div class="dth"><b id="tpt">Create trip</b><button class="ghost" id="tpx" aria-label="Close">✕</button></div>
 <div class="f">
-  <div class="w"><label for="tpc">Country</label><input id="tpc" placeholder="e.g. Sri Lanka" autocomplete="off" list="tpcl"><datalist id="tpcl"><option>Sri Lanka</option><option>India</option><option>Thailand</option><option>Malaysia</option><option>Singapore</option><option>United Arab Emirates</option></datalist></div>
+  <div><label for="tpc">Country</label><input id="tpc" placeholder="e.g. Sri Lanka" autocomplete="off" list="tpcl"><datalist id="tpcl"><option>Sri Lanka</option><option>India</option><option>Thailand</option><option>Malaysia</option><option>Singapore</option><option>United Arab Emirates</option></datalist></div>
+  <div><label for="tpcu">Local currency</label><select id="tpcu"></select></div>
   <div><label for="tpd1">Departure date</label><input id="tpd1" type="date"></div>
   <div><label for="tpd2">Arrival date (back home)</label><input id="tpd2" type="date"></div>
   <div class="w" style="font-weight:700;margin-top:4px">Cash you take (trip cash budget)</div>
   <div><label for="tpu">USD</label><input id="tpu" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
-  <div><label for="tpl">LKR</label><input id="tpl" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+  <div><label for="tpl" id="tpll">LKR</label><input id="tpl" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
   <div class="w mute sm" id="tpbud"></div>
   <div class="acts"><button id="tpdel" class="del" style="display:none">Delete trip</button><button id="tpsave">Save trip</button></div>
 </div></div></div>
@@ -1305,7 +1306,7 @@ document.addEventListener("visibilitychange",()=>{
 let FP=lsGet("fp")||[],FPQ=lsGet("fpq")||[],fpMon="",fpFlushing=false,fpEditId=null;
 /* ---------- trip scope: Card Transactions and Daily Expenses show one trip (or all) ---------- */
 function tripName(t){return t?(t.c||"Trip")+" – "+dlabel(t.d1):""}
-function scopeTrip(){let v="";try{v=localStorage.getItem("scope")||""}catch(e){}if(v==="all")return null;return typeof activeTrip==="function"?activeTrip():null}
+function scopeTrip(){let v="";try{v=localStorage.getItem("scope")||""}catch(e){}if(v==="all")return null;const t=typeof activeTrip==="function"?activeTrip():null;if(t)LCUR=tripCur(t);return t}
 function tripWin(t){                       // entries made before departure (e.g. the dollars you exchange at home) belong to the upcoming trip; later ones to the last trip
   if(!t||!t.id)return {a:t&&t.d1||"",b:t&&t.d2||""};
   const L=TRIPS.slice().sort((x,y)=>String(x.d1).localeCompare(String(y.d1))),i=L.findIndex(x=>x.id===t.id);
@@ -1335,7 +1336,7 @@ function fpLinked(r){return !!r.x&&(!ready||S.exp.some(e=>e.id===r.x))}
 function fpRate(o,b){return o>0&&b>0?b/o:0}
 function fpStat(t,bad){const e=$("fpst");e.textContent=t;e.className=bad?"bad":""}
 function fpRender(){
-  const FPs=scoped(FP);scopeBuild("fptrip");
+  const FPs=scoped(FP);scopeBuild("fptrip");lcUI();
   const months=fpMonths(FPs);
   if(fpMon&&months.indexOf(fpMon)<0)fpMon="";
   const sel=$("fpmon");sel.textContent="";
@@ -1418,8 +1419,8 @@ function fxCross(a,b){const r=FX&&FX.r;return r&&r[a]>0&&r[b]>0?r[b]/r[a]:0}   /
 function fxRender(){
   const e=$("fprate");if(!e)return;e.textContent="";
   if(!FX||!FX.r){e.append(document.createTextNode(FX&&FX.fail?"Live rates unavailable (no connection)":"Loading live rates…"));return}
-  const c=($("fpc").value||"LKR").trim().toUpperCase()||"LKR",l1=mk("div"),l2=mk("small");
-  const pairs=["LKR","MVR"];if(c!=="USD"&&pairs.indexOf(c)<0&&FX.r[c])pairs.splice(1,0,c);
+  const c=($("fpc").value||LCUR).trim().toUpperCase()||LCUR,l1=mk("div"),l2=mk("small");
+  const pairs=[LCUR,"MVR"].filter(k=>FX.r[k]);if(c!=="USD"&&pairs.indexOf(c)<0&&FX.r[c])pairs.splice(1,0,c);
   l1.append(document.createTextNode("1 USD = "));
   pairs.forEach((k,i)=>{if(i)l1.append(document.createTextNode("  ·  "));l1.append(mk("b",{textContent:fxFmt(FX.r[k])}),document.createTextNode(" "+k))});
   e.append(l1);
@@ -1437,7 +1438,7 @@ function fxFmt(x){return x>=100?x.toLocaleString(undefined,{minimumFractionDigit
 setInterval(()=>{if(!$("fpv").hidden&&document.visibilityState==="visible")fxLoad(false)},10*60000);
 
 function fpCalc(){
-  const o=num($("fpo").value),b=num($("fpbm").value),r=fpRate(o,b),c=($("fpc").value||"LKR").trim().toUpperCase()||"LKR",e=$("fpcalc");
+  const o=num($("fpo").value),b=num($("fpbm").value),r=fpRate(o,b),c=($("fpc").value||LCUR).trim().toUpperCase()||LCUR,e=$("fpcalc");
   e.textContent="";
   if(r){
     e.append(document.createTextNode("Effective rate: 1 "+c+" = "),mk("b",{textContent:r.toFixed(4)}),document.createTextNode(" MVR"));
@@ -1452,8 +1453,8 @@ function fpCalc(){
 const CVK={cvu:"USD",cvl:"LKR",cvm:"MVR"};let cvLast="cvu";
 let CVM=lsGet("cvman")||{on:false,l:"",m:""};
 function cvRates(){
-  if(CVM.on){const l=parseFloat(CVM.l),m=parseFloat(CVM.m);return l>0&&m>0?{USD:1,LKR:l,MVR:m}:null}
-  return FX&&FX.r?FX.r:null;
+  if(CVM.on){const l=parseFloat(CVM.l),m=parseFloat(CVM.m);if(!(l>0&&m>0))return null;const o={USD:1,MVR:m};o[LCUR]=l;return o}
+  return FX&&FX.r&&FX.r[LCUR]&&FX.r.MVR?FX.r:null;
 }
 function cvMode(){
   $("cvlive").classList.toggle("on",!CVM.on);$("cvman").classList.toggle("on",!!CVM.on);
@@ -1463,16 +1464,16 @@ function cvMode(){
 function cvCalc(){
   const n=$("cvn");if(!n)return;
   const r=cvRates();
-  if(!r){n.textContent=CVM.on?"Enter both manual rates above (1 USD in LKR and in MVR).":FX&&FX.fail?"Live rates are not available right now (no connection).":"Loading live rates…";return}
+  if(!r){n.textContent=CVM.on?"Enter both manual rates above (1 USD in "+LCUR+" and in MVR).":FX&&FX.fail?"Live rates are not available right now (no connection).":"Loading live rates…";return}
   const src=$(cvLast),v=parseFloat(src.value);
   if(isFinite(v)){const usd=v/r[CVK[cvLast]];Object.keys(CVK).forEach(id=>{if(id!==cvLast)$(id).value=(usd*r[CVK[id]]).toFixed(2)})}
   else Object.keys(CVK).forEach(id=>{if(id!==cvLast)$(id).value=""});
-  n.textContent=(CVM.on?"Your manual rates: ":"")+"1 USD = "+fmt(r.LKR)+" LKR = "+fmt(r.MVR)+" MVR · 1 LKR = "+(r.MVR/r.LKR).toFixed(4)+" MVR · 1 MVR = "+(r.LKR/r.MVR).toFixed(2)+" LKR";
+  n.textContent=(CVM.on?"Your manual rates: ":"")+"1 USD = "+fmt(r[LCUR])+" "+LCUR+" = "+fmt(r.MVR)+" MVR · 1 "+LCUR+" = "+(r.MVR/r[LCUR]).toFixed(4)+" MVR · 1 MVR = "+(r[LCUR]/r.MVR).toFixed(2)+" "+LCUR;
 }
 function cvSet(on){
   CVM.on=on;
   if(on&&!(parseFloat(CVM.l)>0&&parseFloat(CVM.m)>0)){          // start from the live rates (or sensible defaults) so you only change what differs
-    const r=FX&&FX.r;CVM.l=String(r&&r.LKR?+(+r.LKR).toFixed(4):300);CVM.m=String(r&&r.MVR?+(+r.MVR).toFixed(4):15.42);
+    const r=FX&&FX.r;CVM.l=String(r&&r[LCUR]?+(+r[LCUR]).toFixed(4):300);CVM.m=String(r&&r.MVR?+(+r.MVR).toFixed(4):15.42);
   }
   lsSet("cvman",CVM);cvMode();
 }
@@ -1484,7 +1485,7 @@ $("cvuse").onclick=()=>{
   const l=num($("cvl").value),m=num($("cvm").value);
   if(!(l>0&&m>0)){toast("Enter an amount in the converter first");return}
   fpOpen();if(fpEditId)fpFormReset();
-  $("fpc").value="LKR";$("fpo").value=l.toFixed(2);$("fpbm").value=m.toFixed(2);fpCalc();
+  $("fpc").value=LCUR;$("fpo").value=l.toFixed(2);$("fpbm").value=m.toFixed(2);fpCalc();
   $("fpv").scrollTo({top:0,behavior:"smooth"});toast("Filled in the form – add the bank details and save");
 };
 
@@ -1521,7 +1522,7 @@ $("mv").addEventListener("click",ev=>{if(ev.target===$("mv"))mvClose()});
 ["fpcat","cacat"].forEach(id=>{const e=$(id);e.append(mk("option",{value:"",textContent:"– Category (optional) –"}));TCATS.forEach(c=>e.append(mk("option",{value:c,textContent:c})))});
 function fpFormReset(){
   fpEditId=null;
-  ["fpname","fpo","fpbm","fpt","fpbk"].forEach(i=>$(i).value="");$("fpcat").value="";$("fpd").value=todayISO();$("fpc").value="LKR";
+  ["fpname","fpo","fpbm","fpt","fpbk"].forEach(i=>$(i).value="");$("fpcat").value="";$("fpd").value=todayISO();$("fpc").value=LCUR;
   $("fph2").textContent="New card transaction";$("fpadd").textContent="Add card transaction";$("fpcancel").style.display="none";
   fpCalc();fxRender();fpRender();
 }
@@ -1538,7 +1539,7 @@ function fpEdit(r){
 function fpAdd(){
   const o=num($("fpo").value),b=num($("fpbm").value);
   if(o<=0){toast("Enter the amount in the foreign currency");$("fpo").focus();return}
-  const v={d:$("fpd").value||todayISO(),n:$("fpname").value.trim(),cur:($("fpc").value||"LKR").trim().toUpperCase()||"LKR",o:Math.round(o*100)/100,b:b>0?Math.round(b*100)/100:0,bk:$("fpbk").value.trim(),t:$("fpt").value.trim(),c:$("fpcat").value};
+  const v={d:$("fpd").value||todayISO(),n:$("fpname").value.trim(),cur:($("fpc").value||LCUR).trim().toUpperCase()||LCUR,o:Math.round(o*100)/100,b:b>0?Math.round(b*100)/100:0,bk:$("fpbk").value.trim(),t:$("fpt").value.trim(),c:$("fpcat").value};
   const cur=fpEditId?FP.find(x=>x.id===fpEditId):null;
   let r,msg;
   if(cur){Object.assign(cur,v);r=cur;msg="Card transaction updated"}
@@ -1568,27 +1569,33 @@ $("fpopen").onclick=fpOpen;$("fpb").onclick=fpClose;$("fprf").onclick=()=>{fxLoa
 $("fpv").addEventListener("keydown",ev=>{if(ev.key==="Escape")fpClose()});
 
 
-/* ---------- Daily Expenses page (own table; USD and LKR cash) ---------- */
+/* ---------- trip currency: follows the trip's country ---------- */
+const CCUR={"sri lanka":"LKR","india":"INR","thailand":"THB","malaysia":"MYR","singapore":"SGD","united arab emirates":"AED","uae":"AED","dubai":"AED","indonesia":"IDR","bali":"IDR","vietnam":"VND","japan":"JPY","china":"CNY","turkey":"TRY","nepal":"NPR","bangladesh":"BDT","pakistan":"PKR","united kingdom":"GBP","uk":"GBP","england":"GBP","australia":"AUD","philippines":"PHP","south korea":"KRW","korea":"KRW","saudi arabia":"SAR","qatar":"QAR","egypt":"EGP","germany":"EUR","france":"EUR","italy":"EUR","spain":"EUR","netherlands":"EUR","greece":"EUR","switzerland":"CHF","canada":"CAD","new zealand":"NZD","oman":"OMR","kuwait":"KWD","bahrain":"BHD","jordan":"JOD","sweden":"SEK","norway":"NOK","denmark":"DKK","hong kong":"HKD","cambodia":"KHR","myanmar":"MMK","south africa":"ZAR","kenya":"KES","mauritius":"MUR","seychelles":"SCR"};
+const CURLIST=["LKR","INR","THB","MYR","SGD","AED","IDR","VND","JPY","CNY","TRY","NPR","BDT","PKR","GBP","EUR","AUD","PHP","KRW","SAR","QAR","EGP","CHF","CAD","NZD","OMR","KWD","BHD","JOD","SEK","NOK","DKK","HKD","ZAR","KES","MUR","SCR"];
+let LCUR="LKR";
+function curFor(country){return CCUR[String(country||"").trim().toLowerCase()]||""}
+function tripCur(t){return (t&&((t.cash&&t.cash._c)||curFor(t.c)))||"LKR"}
+/* ---------- Daily Expenses page (own table; USD and local-currency cash) ---------- */
 let CA=lsGet("ca")||[],CAQ=lsGet("caq")||[],CAR=lsGet("carate")||{v:0},caFlushing=false,caEditId=null,caKind="out";
-function caBal(list){
-  const b={USD:{i:0,o:0,x:0},LKR:{i:0,o:0,x:0}};   // x: USD exchanged away / LKR received from exchange
+function caBal(list,lc){
+  lc=lc||LCUR;const b={USD:{i:0,o:0,x:0}};b[lc]={i:0,o:0,x:0};   // x: USD exchanged away / local money received from exchange
   list.forEach(r=>{
-    const c=String(r.cur||"LKR").toUpperCase();
-    if(r.k==="ex"){b.USD.x+=num(r.a);b.LKR.x+=num(r.ta);return}
+    const c=String(r.cur||lc).toUpperCase();
+    if(r.k==="ex"){b.USD.x+=num(r.a);b[lc].x+=num(r.ta);return}
     const x=b[c]||(b[c]={i:0,o:0,x:0});if(r.k==="in")x.i+=num(r.a);else x.o+=num(r.a);
   });
-  Object.keys(b).forEach(c=>{b[c].bal=Math.round((b[c].i-b[c].o+(c==="LKR"?b[c].x:-b[c].x))*100)/100});
+  Object.keys(b).forEach(c=>{b[c].bal=Math.round((b[c].i-b[c].o+(c===lc?b[c].x:-b[c].x))*100)/100});
   return b;
 }
 function caMvrUsd(){return (FX&&FX.r&&FX.r.MVR)?FX.r.MVR:15.42}
-function caValue(list){
-  const rt=caRateEff().v,mu=caMvrUsd(),lots=[],sp={},rem={};
+function caValue(list,lc){
+  lc=lc||LCUR;const rt=caRateEff(lc,list).v,mu=caMvrUsd(),lots=[],sp={},rem={};
   const sorted=list.map((r,i)=>({r,i})).sort((p,q)=>String(p.r.d||"").localeCompare(String(q.r.d||""))||p.i-q.i).map(x=>x.r);
   sorted.forEach(r=>{
-    const c=String(r.cur||"LKR").toUpperCase();
+    const c=String(r.cur||lc).toUpperCase();
     if(r.k==="ex"){const l=num(r.ta);lots.push({id:r.id,l:l,m:num(r.a)*mu,rate:num(r.r)});rem[r.id]=l}
-    else if(r.k==="in"&&c==="LKR"){lots.push({id:null,l:num(r.a),m:rt>0?num(r.a)*mu/rt:0})}
-    else if(r.k==="out"&&c==="LKR"){
+    else if(r.k==="in"&&c===lc){lots.push({id:null,l:num(r.a),m:rt>0?num(r.a)*mu/rt:0})}
+    else if(r.k==="out"&&c===lc){
       let need=num(r.a),mv=0;
       while(need>1e-9&&lots.length){
         const L=lots[0],take=Math.min(need,L.l),part=L.l>0?L.m*take/L.l:0;
@@ -1601,38 +1608,49 @@ function caValue(list){
   });
   return {sp,rem,lotsMvr:lots.reduce((t,L)=>t+L.m,0),mu,rt};
 }
-function caRateEff(){                       // LKR per 1 USD: your rate > last exchange > live
-  let last=null;scoped(CA).slice().sort((a,b)=>String(a.d||"").localeCompare(String(b.d||""))).forEach(r=>{if(r.k==="ex"&&num(r.r)>0)last=r});
+function caRateEff(lc,list){                       // local currency per 1 USD: last exchange > live
+  lc=lc||LCUR;let last=null;(list||scoped(CA)).slice().sort((a,b)=>String(a.d||"").localeCompare(String(b.d||""))).forEach(r=>{if(r.k==="ex"&&num(r.r)>0&&String(r.to||lc).toUpperCase()===lc)last=r});
   if(last)return {v:num(last.r),src:"last exchange ("+dlabel(last.d)+")"};
-  if(FX&&FX.r&&FX.r.LKR)return {v:FX.r.LKR,src:"live market rate"};
+  if(FX&&FX.r&&FX.r[lc])return {v:FX.r[lc],src:"live market rate"};
   return {v:0,src:""};
+}
+function lcUI(){   // keeps labels/options in step with the trip's local currency
+  scopeTrip();const c=LCUR,o=$("cacur"),cur=o.value;
+  if(o.dataset.lc!==c){o.textContent="";[c,"USD"].forEach(x=>o.append(mk("option",{value:x,textContent:x})));o.dataset.lc=c;o.value=(cur==="USD"?"USD":c)}
+  const e=$("cbll");if(e)e.textContent=c;
+  const l=document.querySelector('label[for="carate"]');if(l)l.textContent="Rate ("+c+" per 1 USD)";
+  const r=document.querySelector('label[for="carecv"]');if(r)r.textContent=c+" received";
+  CVK.cvl=c;const a=$("cvlab");if(a)a.textContent=c;const b2=document.querySelector('label[for="cvxl"]');if(b2)b2.textContent="1 USD = ? "+c;
+  const u=$("cvuse");if(u)u.textContent="Use "+c+" + MVR in a new card transaction →";
+  const f=$("fpc");if(f&&!fpEditId&&!$("fpo").value&&f.dataset.lc!==c){f.value=c;f.dataset.lc=c}
 }
 function caStat(t,bad){const e=$("cast");e.textContent=t;e.className=bad?"bad":""}
 function caRender(){
   const CAs=scoped(CA);scopeBuild("catrip");
+  lcUI();
   const b=caBal(CAs);
-  [["USD","cbu","cbui"],["LKR","cbl","cbli"]].forEach(([c,id,ii])=>{
+  [["USD","cbu","cbui"],[LCUR,"cbl","cbli"]].forEach(([c,id,ii])=>{
     const x=b[c],e=$(id);
     e.textContent=(x.bal<0?"−":"")+fmt(Math.abs(x.bal));e.className=x.bal<0?"neg":"";
     $(ii).textContent="In "+fmt(x.i)+" · Spent "+fmt(x.o)+(x.x?(c==="USD"?" · Exchanged "+fmt(x.x):" · Exchanged +"+fmt(x.x)):"");
   });
   const rt=caRateEff(),V=caValue(CAs),mvrUsd=V.mu,m=$("cbm");
   if(rt.v>0||CAs.length){
-    const u=b.USD.bal*mvrUsd,l=V.lotsMvr+(b.LKR.bal<0&&rt.v>0?b.LKR.bal*mvrUsd/rt.v:0),tot=Math.round((u+l)*100)/100;
+    const u=b.USD.bal*mvrUsd,l=V.lotsMvr+(b[LCUR].bal<0&&rt.v>0?b[LCUR].bal*mvrUsd/rt.v:0),tot=Math.round((u+l)*100)/100;
     m.textContent=(tot<0?"−":"")+"MVR "+fmt(Math.abs(tot));m.className=tot<0?"neg":"";
-    $("cbmi").textContent="USD part "+fmt(Math.round(u*100)/100)+" + LKR part "+fmt(Math.round(l*100)/100)+" (at your exchange rates) · 1 USD = "+mvrUsd+" MVR";
+    $("cbmi").textContent="USD part "+fmt(Math.round(u*100)/100)+" + "+LCUR+" part "+fmt(Math.round(l*100)/100)+" (at your exchange rates) · 1 USD = "+mvrUsd+" MVR";
   }else{m.textContent="–";m.className="";$("cbmi").textContent="Set the dollar rate to see the MVR value."}
-  $("carsrc").textContent=rt.v>0?"Rupee rate used for LKR cash: "+(+rt.v).toFixed(2)+" LKR per USD ("+rt.src+"). Each exchange keeps its own rate.":"";
+  $("carsrc").textContent=rt.v>0?LCUR+" rate used for local cash: "+(+rt.v).toFixed(2)+" "+LCUR+" per USD ("+rt.src+"). Each exchange keeps its own rate.":"";
   const L=$("calist");L.textContent="";
   CAs.map((x,i)=>({x,i})).sort((p,q)=>String(q.x.d||"").localeCompare(String(p.x.d||""))||q.i-p.i).forEach(({x:r})=>{
-    const c=String(r.cur||"LKR").toUpperCase(),row=mk("div",{className:"car"});
+    const c=String(r.cur||LCUR).toUpperCase(),row=mk("div",{className:"car"});
     const ed=caEditId===r.id?" ✎":"";
     if(r.k==="ex"){
       row.classList.add("exch");
       row.append(mk("div",{className:"n",textContent:r.n||"Money exchange"}));
-      row.append(mk("div",{className:"v ex",textContent:"USD "+fmt(num(r.a))+" → LKR "+fmt(num(r.ta))+ed}));
+      row.append(mk("div",{className:"v ex",textContent:"USD "+fmt(num(r.a))+" → "+LCUR+" "+fmt(num(r.ta))+ed}));
       row.append(caDelBtn(r));
-      row.append(mk("div",{className:"m",textContent:[dlabel(r.d),"exchange @ "+num(r.r)+" LKR per USD",r.t].filter(Boolean).join(" · ")}));
+      row.append(mk("div",{className:"m",textContent:[dlabel(r.d),"exchange @ "+num(r.r)+" "+LCUR+" per USD",r.t].filter(Boolean).join(" · ")}));
     }else{
       row.append(mk("div",{className:"n",textContent:r.n||(r.k==="in"?"Cash in":"Cash spent")}));
       row.append(mk("div",{className:"v "+(r.k==="in"?"in":"out"),textContent:(r.k==="in"?"+":"−")+c+" "+fmt(num(r.a))+ed}));
@@ -1649,12 +1667,12 @@ function caRender(){
   if(ex.length){
     const sumU=ex.reduce((t,x)=>t+num(x.a),0),sumL=ex.reduce((t,x)=>t+num(x.ta),0),rs=ex.map(x=>num(x.r)).filter(v=>v>0);
     $("caexsum").textContent=ex.length+(ex.length===1?" exchange":" exchanges");
-    $("caexs").textContent=ex.length+(ex.length===1?" exchange":" exchanges")+" · USD "+fmt(sumU)+" → LKR "+fmt(sumL)+(sumU>0?" · average "+(sumL/sumU).toFixed(2)+" LKR per USD":"")+(rs.length>1?" · lowest "+Math.min(...rs)+" · highest "+Math.max(...rs):"");
+    $("caexs").textContent=ex.length+(ex.length===1?" exchange":" exchanges")+" · USD "+fmt(sumU)+" → "+LCUR+" "+fmt(sumL)+(sumU>0?" · average "+(sumL/sumU).toFixed(2)+" "+LCUR+" per USD":"")+(rs.length>1?" · lowest "+Math.min(...rs)+" · highest "+Math.max(...rs):"");
     const EL=$("caexl");EL.textContent="";
     ex.map((x,i)=>({x,i})).sort((p,q)=>String(q.x.d||"").localeCompare(String(p.x.d||""))||q.i-p.i).forEach(({x})=>{
       const row=mk("div",{className:"exr"}),left=V.rem[x.id]!=null?V.rem[x.id]:num(x.ta);
       row.append(mk("div",{className:"n",textContent:dlabel(x.d)+(x.n?" · "+x.n:"")}),mk("div",{className:"v",textContent:"@ "+num(x.r)}),
-        mk("div",{className:"m",textContent:"USD "+fmt(num(x.a))+" → LKR "+fmt(num(x.ta))+" · LKR left from this exchange: "+fmt(Math.max(0,Math.round(left*100)/100))}));
+        mk("div",{className:"m",textContent:"USD "+fmt(num(x.a))+" → "+LCUR+" "+fmt(num(x.ta))+" · "+LCUR+" left from this exchange: "+fmt(Math.max(0,Math.round(left*100)/100))}));
       EL.append(row);
     });
   }
@@ -1717,7 +1735,7 @@ function caHint(){
     const g=num($("carecv").value);
     e.append(document.createTextNode("Dollars available to exchange: USD "+fmt(Math.max(0,b.USD.bal))));
     if(a>b.USD.bal+0.004){e.append(document.createTextNode("  –  "),mk("b",{textContent:"more than you have",style:"color:var(--bad)"}))}
-    else if(a>0)e.append(document.createTextNode("  →  after: USD "+fmt(b.USD.bal-a)+" · LKR "+fmt(b.LKR.bal+(g>0?g:0))));
+    else if(a>0)e.append(document.createTextNode("  →  after: USD "+fmt(b.USD.bal-a)+" · "+LCUR+" "+fmt(b[LCUR].bal+(g>0?g:0))));
     return;
   }
   const c=$("cacur").value,bal=b[c]?b[c].bal:0;
@@ -1728,7 +1746,7 @@ function caHint(){
   }
 }
 function caFormReset(){
-  caEditId=null;["caamt","canm","cant","carecv"].forEach(i=>$(i).value="");$("cacat").value="";$("carate").value="";$("cad").value=todayISO();$("cacur").value="LKR";
+  caEditId=null;["caamt","canm","cant","carecv"].forEach(i=>$(i).value="");$("cacat").value="";$("carate").value="";$("cad").value=todayISO();$("cacur").value=LCUR;
   $("cah2").textContent="Add cash entry";$("caadd").textContent="Add";$("cacancel").style.display="none";
   caSetKind(caKind);caRender();
 }
@@ -1737,7 +1755,7 @@ function caEdit(r){
   caEditId=r.id;caSetKind(r.k==="ex"?"ex":r.k==="in"?"in":"out");
   $("cad").value=isoOf(r.d)||todayISO();$("canm").value=r.n||"";$("cant").value=r.t||"";$("caamt").value=r.a;$("cacat").value=r.c||"";
   if(r.k==="ex"){$("carate").value=r.r;$("carecv").value=r.ta}
-  else $("cacur").value=String(r.cur||"LKR").toUpperCase()==="USD"?"USD":"LKR";
+  else $("cacur").value=String(r.cur||LCUR).toUpperCase()==="USD"?"USD":LCUR;
   $("cah2").textContent="Edit cash entry";$("caadd").textContent="Save changes";$("cacancel").style.display="";
   caHint();caRender();$("cav").scrollTo({top:0,behavior:"smooth"});
 }
@@ -1751,9 +1769,9 @@ function caAdd(){
     if(a>avail+0.004){toast(avail>0?"You only have USD "+fmt(avail)+" in Daily Expenses cash to exchange":"No dollars in Daily Expenses – add them with Cash in first");$("caamt").focus();return}
     rate=num($("carate").value);let g=num($("carecv").value);
     if(!(rate>0)&&g>0)rate=g/a;
-    if(!(rate>0)){toast("Enter the exchange rate (LKR per 1 USD)");$("carate").focus();return}
+    if(!(rate>0)){toast("Enter the exchange rate ("+LCUR+" per 1 USD)");$("carate").focus();return}
     if(!(g>0))g=a*rate;
-    v.cur="USD";v.to="LKR";v.ta=Math.round(g*100)/100;v.r=+rate.toFixed(4);
+    v.cur="USD";v.to=LCUR;v.ta=Math.round(g*100)/100;v.r=+rate.toFixed(4);
   }else v.cur=$("cacur").value;
   const cur=caEditId?CA.find(x=>x.id===caEditId):null;let r,msg;
   if(cur){Object.assign(cur,v);r=cur;msg="Entry updated"}
@@ -1772,7 +1790,7 @@ function caDel(r){
 }
 function caOpen(){
   $("cav").hidden=false;document.body.style.overflow="hidden";$("cav").scrollTop=0;
-  if(!caEditId){caKind="out";$("cad").value=todayISO();$("cacur").value="LKR"}   // most spending is in rupees
+  if(!caEditId){caKind="out";$("cad").value=todayISO();$("cacur").value=LCUR}   // most spending is in rupees
   caSetKind(caKind);caRender();caSync();
   if(typeof fxLoad==="function")fxLoad(false).then(caRender).catch(()=>{});
   try{history.replaceState(null,"","#cash")}catch(e){}
@@ -1802,7 +1820,7 @@ function tpLinked(id){return TRIPS.some(t=>t.cash&&Object.keys(t.cash).some(c=>t
 let CAOK=false,TPOK=false;
 function tpEnsureCash(){                     // trip cash lives in Settings: put back any trip cash entry that went missing
   if(!CAOK||!TPOK)return;
-  TRIPS.forEach(t=>["USD","LKR"].forEach(cur=>{
+  TRIPS.forEach(t=>["USD",tripCur(t)].forEach(cur=>{
     const c=t.cash&&t.cash[cur];if(!c||!(num(c.a)>0)||!c.id||CA.some(x=>x.id===c.id))return;
     const r={id:c.id,d:t.d1,k:"in",cur:cur,a:num(c.a),n:"Trip cash – "+(t.c||"Trip"),t:"",to:null,ta:null,r:null,c:""};
     CA.push(r);caPush({k:"s",r:Object.assign({},r)});
@@ -1815,10 +1833,10 @@ function activeTrip(){
   const today=todayISO();t=TRIPS.find(x=>x.d1&&x.d2&&x.d1<=today&&today<=x.d2);if(t)return t;
   return TRIPS.slice().sort((a,b)=>String(b.d1||"").localeCompare(String(a.d1||"")))[0];
 }
-function tpCashText(t){return ["USD","LKR"].filter(c=>t.cash&&t.cash[c]&&num(t.cash[c].a)>0).map(c=>c+" "+fmt(num(t.cash[c].a))).join(" · ")||"no cash set"}
+function tpCashText(t){return ["USD",tripCur(t)].filter(c=>t.cash&&t.cash[c]&&num(t.cash[c].a)>0).map(c=>c+" "+fmt(num(t.cash[c].a))).join(" · ")||"no cash set"}
 function tpBudgetMvr(t){                       // value of the opening cash in MVR
-  const mu=caMvrUsd(),rt=caRateEff().v,c=t.cash||{};
-  return (c.USD?num(c.USD.a)*mu:0)+(c.LKR&&rt>0?num(c.LKR.a)*mu/rt:0);
+  const lc=tripCur(t),mu=caMvrUsd(),rt=caRateEff(lc,CA.filter(x=>inTrip(t.id?t:null,x.d))).v,c=t.cash||{};
+  return (c.USD?num(c.USD.a)*mu:0)+(c[lc]&&rt>0?num(c[lc].a)*mu/rt:0);
 }
 function tpRender(){
   const L=$("tplist");if(!L)return;L.textContent="";
@@ -1858,14 +1876,15 @@ function tpOpen(t){
   tpEdit=t||null;tpSure=false;
   $("tpt").textContent=t?"Edit trip":"Create trip";
   $("tpc").value=t?t.c:"";$("tpd1").value=t?t.d1||"":"";$("tpd2").value=t?t.d2||"":"";
-  const c=(t&&t.cash)||{};$("tpu").value=c.USD?c.USD.a:"";$("tpl").value=c.LKR?c.LKR.a:"";
+  const c=(t&&t.cash)||{},lc=t?tripCur(t):"LKR";tpCurSet(lc);$("tpu").value=c.USD?c.USD.a:"";$("tpl").value=c[lc]?c[lc].a:"";
   const b=$("tpdel");b.style.display=t?"":"none";b.textContent="Delete trip";b.classList.remove("sure");
   tpBud();$("tsh").hidden=false;
 }
+function tpCurSet(c){const e=$("tpcu");if(!e.options.length)CURLIST.forEach(x=>e.append(mk("option",{value:x,textContent:x})));if(!CURLIST.includes(c)){e.append(mk("option",{value:c,textContent:c}))}e.value=c;$("tpll").textContent=c}
 function tpClose(){$("tsh").hidden=true;tpEdit=null}
 function tpBud(){
-  const t={cash:{USD:{a:num($("tpu").value)},LKR:{a:num($("tpl").value)}}},v=tpBudgetMvr(t);
-  $("tpbud").textContent=v>0?"Cash budget ≈ MVR "+fmt(Math.round(v*100)/100)+" (dollars at "+caMvrUsd()+" MVR, rupees at your dollar rate)":"This cash is added to Daily Expenses and becomes the trip's cash budget.";
+  const lc=$("tpcu").value,t={c:$("tpc").value,cash:{USD:{a:num($("tpu").value)},_c:lc}};t.cash[lc]={a:num($("tpl").value)};const v=tpBudgetMvr(t);
+  $("tpbud").textContent=v>0?"Cash budget ≈ MVR "+fmt(Math.round(v*100)/100)+" (dollars at "+caMvrUsd()+" MVR, "+$("tpcu").value+" at the live rate or your last exchange)":"This cash is added to Daily Expenses and becomes the trip's cash budget.";
 }
 function tpSave(){
   const c=$("tpc").value.trim(),d1=$("tpd1").value,d2=$("tpd2").value;
@@ -1873,8 +1892,9 @@ function tpSave(){
   if(!d1){toast("Enter the departure date");$("tpd1").focus();return}
   if(!d2){toast("Enter the arrival date");$("tpd2").focus();return}
   if(d2<d1){toast("Arrival date must be after the departure date");$("tpd2").focus();return}
-  const prev=tpEdit&&tpEdit.cash||{},cash={},amts={USD:num($("tpu").value),LKR:num($("tpl").value)};
-  ["USD","LKR"].forEach(cur=>{
+  const lc=$("tpcu").value,prev=tpEdit&&tpEdit.cash||{},cash={_c:lc},amts={USD:num($("tpu").value)};amts[lc]=num($("tpl").value);
+  Object.keys(prev).forEach(k=>{if(k!=="_c"&&k!=="USD"&&k!==lc&&prev[k]&&prev[k].id){CA=CA.filter(x=>x.id!==prev[k].id);caPush({k:"d",id:prev[k].id})}});
+  ["USD",lc].forEach(cur=>{
     const a=Math.round(amts[cur]*100)/100,pid=prev[cur]&&prev[cur].id,ex=pid?CA.find(x=>x.id===pid):null;
     if(a>0){
       const id=pid||uid(),v={d:d1,k:"in",cur:cur,a:a,n:"Trip cash – "+c,t:"",to:null,ta:null,r:null};
@@ -1897,6 +1917,8 @@ function tpDelete(){
 $("tpnew").onclick=()=>tpOpen(null);$("tpx").onclick=tpClose;$("tpsave").onclick=tpSave;$("tpdel").onclick=tpDelete;
 $("tsh").addEventListener("click",ev=>{if(ev.target===$("tsh"))tpClose()});
 ["tpu","tpl"].forEach(i=>$(i).addEventListener("input",tpBud));
+$("tpcu").addEventListener("change",()=>{$("tpll").textContent=$("tpcu").value;tpBud()});
+$("tpc").addEventListener("input",()=>{const c=curFor($("tpc").value);if(c&&!tpEdit){tpCurSet(c);tpBud()}});
 tpRender();
 
 /* ---------- Trip Summary (card + cash spending abroad, in MVR) ---------- */
@@ -1908,11 +1930,11 @@ function trRange(at0){
 }
 function trCalc(at0){
   const R=trRange(at0),today=todayISO(),inR=d=>{d=isoOf(d)||"";return d&&(R.at?inTrip(R.at,d):(!R.s||d>=R.s)&&(!R.e||d<=R.e))};
-  const V=caValue(CA.filter(r=>inTrip(R.at||{d1:R.s,d2:R.e},r.d))),days={},src={};let card=0,cash=0,nCard=0,nCash=0,pend=0,nPend=0;
+  const LC=tripCur(R.at),V=caValue(CA.filter(r=>inTrip(R.at||{d1:R.s,d2:R.e},r.d)),LC),days={},src={};let card=0,cash=0,nCard=0,nCash=0,pend=0,nPend=0;
   const cardCur={},cashCur={},cats={},addCat=(c,v)=>{const k=c||"Uncategorised";cats[k]=(cats[k]||0)+v};let big=null,ex={usd:0,lkr:0,n:0};const bigC=(n,v)=>{if(!big||v>big.v)big={n:n||"(no name)",v:v}};
   const day=d=>days[d]||(days[d]={card:0,cash:0});
   FP.forEach(r=>{
-    if(!inR(r.d))return;const d=isoOf(r.d),c=String(r.cur||"LKR").toUpperCase();
+    if(!inR(r.d))return;const d=isoOf(r.d),c=String(r.cur||LC).toUpperCase();
     if(num(r.b)>0){addCat(r.c,num(r.b));bigC(r.n,num(r.b));card+=num(r.b);nCard++;day(d).card+=num(r.b);cardCur[c]=(cardCur[c]||0)+num(r.o)}
     else if(num(r.o)>0){const m=c==="MVR"?1:fxCross(c,"MVR");if(m)pend+=num(r.o)*m;nPend++}
   });
@@ -1948,8 +1970,8 @@ function trRender(){
   chip("Foreign card spend",Object.keys(T.cardCur).sort().map(c=>c+" "+fmt(T.cardCur[c])).join(" · ")||"–","before conversion");
   const bd=$("trbud");bd.textContent="";
   if(at){
-    const bg=R.b,spent=T.cash,left=bg-spent,pc=bg>0?Math.min(100,Math.max(0,spent/bg*100)):0,CT=CA.filter(r=>inTrip(at,r.d)),b2=caBal(CT),V2=caValue(CT);
-    const hand=b2.USD.bal*V2.mu+V2.lotsMvr+(b2.LKR.bal<0&&V2.rt>0?b2.LKR.bal*V2.mu/V2.rt:0);
+    const bg=R.b,spent=T.cash,left=bg-spent,pc=bg>0?Math.min(100,Math.max(0,spent/bg*100)):0,CT=CA.filter(r=>inTrip(at,r.d)),b2=caBal(CT,tripCur(at)),V2=caValue(CT,tripCur(at));
+    const hand=b2.USD.bal*V2.mu+V2.lotsMvr+(b2[tripCur(at)].bal<0&&V2.rt>0?b2[tripCur(at)].bal*V2.mu/V2.rt:0);
     if(bg>0){
       bd.append(document.createTextNode("Cash budget MVR "+fmt(r2(bg))+" · "+(left>=0?"left ":"over by ")),mk("b",{textContent:"MVR "+fmt(r2(Math.abs(left)))}));
       const bar=mk("div",{className:"bar"}),fill=mk("i",{className:left<0?"over":""});fill.style.width=pc.toFixed(1)+"%";bar.append(fill);bd.append(bar);
@@ -1977,7 +1999,7 @@ function trRender(){
     box2("Busiest day",dd?"MVR "+fmt(r2(dd[1])):"–",dd?dlabel(dd[0]):"");
     box2("Biggest spend",T.big?"MVR "+fmt(r2(T.big.v)):"–",T.big?T.big.n:"");
     if(at){const bg=R.b;box2("Cash left from budget",bg>0?"MVR "+fmt(r2(bg-T.cash)):"–",bg>0?"of MVR "+fmt(r2(bg))+" taken":"no opening cash")}
-    box2("Money exchanged",T.ex.n?"USD "+fmt(r2(T.ex.usd)):"–",T.ex.n?"→ LKR "+fmt(r2(T.ex.lkr))+" · avg "+fmt(r2(T.ex.lkr/T.ex.usd))+" per USD":"no exchanges");
+    box2("Money exchanged",T.ex.n?"USD "+fmt(r2(T.ex.usd)):"–",T.ex.n?"→ "+tripCur(R.at)+" "+fmt(r2(T.ex.lkr))+" · avg "+fmt(r2(T.ex.lkr/T.ex.usd))+" per USD":"no exchanges");
     const sp=$("trsplit");sp.textContent="";
     if(T.total>0){const cp=T.card/T.total*100,b=mk("div",{className:"sp"}),a1=mk("i"),a2=mk("i");a1.style.cssText="width:"+cp.toFixed(1)+"%;background:#4c7bd9";a2.style.cssText="width:"+(100-cp).toFixed(1)+"%;background:#f0a04b";b.append(a1,a2);
       sp.append(b,mk("span",{className:"mute sm",textContent:"Card "+Math.round(cp)+"% · Cash "+Math.round(100-cp)+"%"}))}
